@@ -1,7 +1,21 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, BookOpen, CheckCircle, ChevronDown, ChevronUp, Home, Volume2, VolumeX, Play, Pause, FileText, ExternalLink, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronRight, ChevronLeft, BookOpen, CheckCircle, ChevronDown, ChevronUp, Home, Volume2, VolumeX, Play, Pause, FileText, ExternalLink, ZoomIn, ZoomOut } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import 'react-pdf/dist/Page/AnnotationLayer.css';
+import 'react-pdf/dist/Page/TextLayer.css';
+
+// Dynamically import react-pdf components to avoid SSR issues
+const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
+const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
+
+// Set up the worker for react-pdf (only on client side)
+if (typeof window !== 'undefined') {
+  import('react-pdf').then((pdfjs) => {
+    pdfjs.pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.pdfjs.version}/build/pdf.worker.min.mjs`;
+  });
+}
 
 const DistributedSystemsApp = () => {
   const [currentView, setCurrentView] = useState('home');
@@ -12,6 +26,14 @@ const DistributedSystemsApp = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [expandedTopics, setExpandedTopics] = useState({});
+  const [showPdfViewer, setShowPdfViewer] = useState(true);
+  const [pdfScale, setPdfScale] = useState(1.0);
+  const [currentPdfPage, setCurrentPdfPage] = useState(null);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
@@ -666,6 +688,7 @@ const DistributedSystemsApp = () => {
               onClick={() => {
                 setCurrentUnit(unit);
                 setCurrentView('unit');
+                setCurrentPdfPage(null); // Reset PDF page when switching units
                 window.scrollTo(0, 0);
               }}
             >
@@ -852,9 +875,27 @@ const DistributedSystemsApp = () => {
               <FileText className="w-6 h-6 text-indigo-600" />
               Course Material
             </h2>
+            <div className="flex items-center gap-3">
+              <button
+                onClick={() => setShowPdfViewer(!showPdfViewer)}
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-semibold hover:bg-indigo-200 transition-colors"
+              >
+                {showPdfViewer ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                {showPdfViewer ? 'Hide PDF' : 'Show PDF'}
+              </button>
+              <a
+                href={`/zcas-distributed-systems-app/distributed-systems-module.pdf#page=${unit.pdfPages.split('-')[0]}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Open in New Tab
+              </a>
+            </div>
           </div>
-          
-          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-6 border border-indigo-200">
+
+          <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-lg p-6 border border-indigo-200 mb-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="p-2 bg-indigo-600 rounded-lg">
                 <BookOpen className="w-5 h-5 text-white" />
@@ -865,6 +906,141 @@ const DistributedSystemsApp = () => {
               </div>
             </div>
           </div>
+
+          {showPdfViewer && (() => {
+            const [startPage, endPage] = unit.pdfPages.split('-').map(p => parseInt(p.trim()));
+            const totalPages = endPage - startPage + 1;
+            const displayPage = currentPdfPage || startPage;
+
+            return (
+              <div className="border-2 border-indigo-200 rounded-lg overflow-hidden bg-gray-100">
+                <div className="bg-indigo-100 px-4 py-3 border-b border-indigo-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm font-semibold text-indigo-700">PDF Viewer</span>
+                    <span className="text-xs text-indigo-600 bg-white px-2 py-1 rounded">Pages {unit.pdfPages}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPdfScale(Math.max(0.75, pdfScale - 0.25))}
+                      disabled={pdfScale <= 0.75}
+                      className="p-1.5 bg-white text-indigo-600 rounded hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Zoom Out"
+                    >
+                      <ZoomOut className="w-4 h-4" />
+                    </button>
+                    <span className="text-sm font-medium text-indigo-700 bg-white px-2 py-1 rounded min-w-[60px] text-center">
+                      {Math.round(pdfScale * 100)}%
+                    </span>
+                    <button
+                      onClick={() => setPdfScale(Math.min(2, pdfScale + 0.25))}
+                      disabled={pdfScale >= 2}
+                      className="p-1.5 bg-white text-indigo-600 rounded hover:bg-indigo-50 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Zoom In"
+                    >
+                      <ZoomIn className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white px-4 py-3 border-b border-indigo-200 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setCurrentPdfPage(Math.max(startPage, (currentPdfPage || startPage) - 1))}
+                      disabled={displayPage <= startPage}
+                      className="p-1.5 bg-indigo-100 text-indigo-600 rounded hover:bg-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Previous Page"
+                    >
+                      <ChevronLeft className="w-4 h-4" />
+                    </button>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-gray-700">Page</span>
+                      <input
+                        type="number"
+                        value={displayPage}
+                        onChange={(e) => {
+                          const page = parseInt(e.target.value);
+                          if (page >= startPage && page <= endPage) {
+                            setCurrentPdfPage(page);
+                          }
+                        }}
+                        min={startPage}
+                        max={endPage}
+                        className="w-16 px-2 py-1 text-sm font-medium text-center border border-indigo-300 rounded focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                      />
+                      <span className="text-sm font-medium text-gray-700">of {endPage}</span>
+                      <span className="text-xs text-gray-500">({totalPages} pages for this unit)</span>
+                    </div>
+                    <button
+                      onClick={() => setCurrentPdfPage(Math.min(endPage, (currentPdfPage || startPage) + 1))}
+                      disabled={displayPage >= endPage}
+                      className="p-1.5 bg-indigo-100 text-indigo-600 rounded hover:bg-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Next Page"
+                    >
+                      <ChevronRight className="w-4 h-4" />
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setCurrentPdfPage(startPage)}
+                      disabled={displayPage === startPage}
+                      className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      First
+                    </button>
+                    <button
+                      onClick={() => setCurrentPdfPage(endPage)}
+                      disabled={displayPage === endPage}
+                      className="px-3 py-1 text-sm bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Last
+                    </button>
+                  </div>
+                </div>
+
+                <div className="bg-white p-4 flex justify-center items-center min-h-[800px]">
+                  {isClient ? (
+                    <Document
+                      file="/zcas-distributed-systems-app/distributed-systems-module.pdf"
+                      loading={
+                        <div className="flex items-center justify-center p-8">
+                          <div className="text-indigo-600">Loading PDF...</div>
+                        </div>
+                      }
+                      error={
+                        <div className="flex items-center justify-center p-8">
+                          <div className="text-red-600">Failed to load PDF. Please try again.</div>
+                        </div>
+                      }
+                    >
+                      <Page
+                        pageNumber={displayPage}
+                        scale={pdfScale}
+                        renderTextLayer={true}
+                        renderAnnotationLayer={true}
+                        className="shadow-lg"
+                        loading={
+                          <div className="flex items-center justify-center p-8">
+                            <div className="text-indigo-600">Loading page {displayPage}...</div>
+                          </div>
+                        }
+                      />
+                    </Document>
+                  ) : (
+                    <div className="flex items-center justify-center p-8">
+                      <div className="text-indigo-600">Initializing PDF viewer...</div>
+                    </div>
+                  )}
+                </div>
+
+                <div className="bg-indigo-50 px-4 py-3 border-t border-indigo-200">
+                  <p className="text-xs text-indigo-600">
+                    📖 Viewing Unit {unit.id} material • Page {displayPage} of {endPage} • Unit covers pages {unit.pdfPages}
+                  </p>
+                </div>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="bg-white rounded-xl shadow-md p-8 mb-8">
