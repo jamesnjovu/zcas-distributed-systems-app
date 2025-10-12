@@ -3,8 +3,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronRight, ChevronLeft, BookOpen, CheckCircle, ChevronDown, ChevronUp, Home, Volume2, VolumeX, Play, Pause, FileText, ExternalLink, ZoomIn, ZoomOut } from 'lucide-react';
 import dynamic from 'next/dynamic';
-import 'react-pdf/dist/Page/AnnotationLayer.css';
-import 'react-pdf/dist/Page/TextLayer.css';
 
 // Dynamically import react-pdf components to avoid SSR issues
 const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
@@ -884,7 +882,7 @@ const DistributedSystemsApp = () => {
                 {showPdfViewer ? 'Hide PDF' : 'Show PDF'}
               </button>
               <a
-                href={`/zcas-distributed-systems-app/distributed-systems-module.pdf#page=${unit.pdfPages.split('-')[0]}`}
+                href={`${process.env.NODE_ENV === 'production' ? '/zcas-distributed-systems-app' : ''}/distributed-systems-module.pdf#page=${unit.pdfPages.split('-')[0]}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
@@ -1001,7 +999,7 @@ const DistributedSystemsApp = () => {
                 <div className="bg-white p-4 flex justify-center items-center min-h-[800px]">
                   {isClient ? (
                     <Document
-                      file="/zcas-distributed-systems-app/distributed-systems-module.pdf"
+                      file={`${process.env.NODE_ENV === 'production' ? '/zcas-distributed-systems-app' : ''}/distributed-systems-module.pdf`}
                       loading={
                         <div className="flex items-center justify-center p-8">
                           <div className="text-indigo-600">Loading PDF...</div>
@@ -1016,8 +1014,8 @@ const DistributedSystemsApp = () => {
                       <Page
                         pageNumber={displayPage}
                         scale={pdfScale}
-                        renderTextLayer={true}
-                        renderAnnotationLayer={true}
+                        renderTextLayer={false}
+                        renderAnnotationLayer={false}
                         className="shadow-lg"
                         loading={
                           <div className="flex items-center justify-center p-8">

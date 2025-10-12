@@ -7,11 +7,13 @@
     "build": "next build --turbopack",
     "start": "next start",
     "lint": "eslint",
-    "deploy": "next build && touch out/.nojekyll && gh-pages -d out -t true"
+    "deploy": "next build && node -e \"require('fs').writeFileSync('out/.nojekyll', '')\" && gh-pages -d out"
   },
   "dependencies": {
+    "autoprefixer": "^10.4.21",
     "lucide-react": "^0.545.0",
     "next": "15.5.4",
+    "postcss": "^8.5.6",
     "react": "19.1.0",
     "react-dom": "19.1.0",
     "react-pdf": "^10.2.0"
@@ -22,6 +24,6 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.4",
     "gh-pages": "^6.3.0",
-    "tailwindcss": "^4"
+    "tailwindcss": "^4.1.14"
   }
 }
