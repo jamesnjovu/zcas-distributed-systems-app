@@ -1,12 +1,12 @@
 /** @type {import('next').NextConfig} */
-const isProd = process.env.NODE_ENV === 'production';
 const nextConfig = {
   output: 'export',
-  basePath: isProd ? '/zcas-distributed-systems-app' : '',
-  assetPrefix: isProd ? '/zcas-distributed-systems-app/' : '',
+  basePath: '/zcas-distributed-systems-app',
+  assetPrefix: '/zcas-distributed-systems-app',
   images: {
     unoptimized: true,
   },
+  trailingSlash: true,
 };
 
 export default nextConfig;

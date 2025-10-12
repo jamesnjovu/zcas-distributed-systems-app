@@ -882,7 +882,7 @@ const DistributedSystemsApp = () => {
                 {showPdfViewer ? 'Hide PDF' : 'Show PDF'}
               </button>
               <a
-                href={`${process.env.NODE_ENV === 'production' ? '/zcas-distributed-systems-app' : ''}/distributed-systems-module.pdf#page=${unit.pdfPages.split('-')[0]}`}
+                href={`/zcas-distributed-systems-app/distributed-systems-module.pdf#page=${unit.pdfPages.split('-')[0]}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
@@ -999,7 +999,7 @@ const DistributedSystemsApp = () => {
                 <div className="bg-white p-4 flex justify-center items-center min-h-[800px]">
                   {isClient ? (
                     <Document
-                      file={`${process.env.NODE_ENV === 'production' ? '/zcas-distributed-systems-app' : ''}/distributed-systems-module.pdf`}
+                      file="/zcas-distributed-systems-app/distributed-systems-module.pdf"
                       loading={
                         <div className="flex items-center justify-center p-8">
                           <div className="text-indigo-600">Loading PDF...</div>
