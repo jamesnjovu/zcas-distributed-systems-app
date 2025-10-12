@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { ChevronRight, ChevronLeft, BookOpen, CheckCircle, ChevronDown, ChevronUp, Home, Volume2, VolumeX, Play, Pause, FileText, ExternalLink, ZoomIn, ZoomOut } from 'lucide-react';
+import { ChevronRight, ChevronLeft, BookOpen, CheckCircle, ChevronDown, ChevronUp, Home, Volume2, VolumeX, Play, Pause, FileText, ExternalLink, ZoomIn, ZoomOut, Search, X, ArrowLeft, ArrowRight } from 'lucide-react';
 import dynamic from 'next/dynamic';
 
 // Dynamically import react-pdf components to avoid SSR issues
@@ -28,6 +28,8 @@ const DistributedSystemsApp = () => {
   const [pdfScale, setPdfScale] = useState(1.0);
   const [currentPdfPage, setCurrentPdfPage] = useState(null);
   const [isClient, setIsClient] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   useEffect(() => {
     setIsClient(true);
@@ -80,6 +82,10 @@ const DistributedSystemsApp = () => {
     let fullText = `Unit ${unit.id}: ${unit.title}. `;
     fullText += `Summary: ${unit.summary}. `;
     fullText += `Key points: ${unit.keyPoints.join('. ')}. `;
+
+    unit.topics.forEach((topic) => {
+      fullText += `Topic ${topic.title}: ${topic.title}. Summary: ${topic.summary}. `;
+    });
     
     unit.exercises.forEach((ex, idx) => {
       fullText += `Question ${idx + 1}: ${ex.q}. Answer: ${ex.a}. `;
@@ -108,7 +114,7 @@ const DistributedSystemsApp = () => {
     setCompletedUnits(prev => new Set([...prev, unitId]));
   };
 
-   const courseData = {
+  const courseData = {
     title: "Distributed Computing",
     units: [
       {
@@ -654,6 +660,24 @@ const DistributedSystemsApp = () => {
     ]
   };
 
+  // Filter units based on search query
+  const filteredUnits = courseData.units.filter(unit => {
+    if (!searchQuery) return true;
+    const query = searchQuery.toLowerCase();
+    return (
+      unit.title.toLowerCase().includes(query) ||
+      unit.summary.toLowerCase().includes(query) ||
+      unit.topics.some(topic =>
+        topic.title.toLowerCase().includes(query) ||
+        topic.summary.toLowerCase().includes(query)
+      ) ||
+      unit.exercises.some(ex =>
+        ex.q.toLowerCase().includes(query) ||
+        ex.a.toLowerCase().includes(query)
+      )
+    );
+  });
+
   const HomePage = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       <div className="max-w-6xl mx-auto px-4 py-12">
@@ -678,8 +702,37 @@ const DistributedSystemsApp = () => {
           </div>
         </div>
 
+        {/* Search Bar */}
+        <div className="mb-8">
+          <div className="max-w-2xl mx-auto relative">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search units, topics, exercises..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-12 pr-12 py-4 text-lg rounded-xl border-2 border-gray-200 focus:border-blue-500 focus:outline-none shadow-lg"
+              />
+              {searchQuery && (
+                <button
+                  onClick={() => setSearchQuery('')}
+                  className="absolute right-4 top-1/2 transform -translate-y-1/2 p-1 hover:bg-gray-100 rounded-full"
+                >
+                  <X className="w-5 h-5 text-gray-400" />
+                </button>
+              )}
+            </div>
+            {searchQuery && (
+              <div className="mt-2 text-center text-sm text-gray-600">
+                Found {filteredUnits.length} {filteredUnits.length === 1 ? 'unit' : 'units'}
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {courseData.units.map((unit) => (
+          {filteredUnits.map((unit) => (
             <div
               key={unit.id}
               className="group relative bg-white rounded-xl shadow-md hover:shadow-xl transition-all duration-300 cursor-pointer overflow-hidden border-2 border-transparent hover:border-blue-500"
@@ -725,32 +778,37 @@ const DistributedSystemsApp = () => {
     </div>
   );
 
-  const UnitView = ({ unit }) => (
-    <div className="min-h-screen bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white sticky top-0 z-10 shadow-lg">
-        <div className="max-w-6xl mx-auto px-4 py-6">
-          <button
-            onClick={() => {
-              setCurrentView('home');
-              stopSpeaking();
-            }}
-            className="flex items-center gap-2 text-white/90 hover:text-white mb-4 transition-colors"
-          >
-            <Home className="w-4 h-4" />
-            Back to Units
-          </button>
-          <div className="flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-3 mb-2">
-                <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20 text-white font-bold">
-                  {unit.id}
+  const UnitView = ({ unit }) => {
+    const currentIndex = courseData.units.findIndex(u => u.id === unit.id);
+    const prevUnit = currentIndex > 0 ? courseData.units[currentIndex - 1] : null;
+    const nextUnit = currentIndex < courseData.units.length - 1 ? courseData.units[currentIndex + 1] : null;
+
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white sticky top-0 z-10 shadow-lg">
+          <div className="max-w-6xl mx-auto px-4 py-6">
+            <button
+              onClick={() => {
+                setCurrentView('home');
+                stopSpeaking();
+              }}
+              className="flex items-center gap-2 text-white/90 hover:text-white mb-4 transition-colors"
+            >
+              <Home className="w-4 h-4" />
+              Back to Units
+            </button>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center justify-center w-10 h-10 rounded-lg bg-white/20 text-white font-bold">
+                    {unit.id}
+                  </div>
+                  <h1 className="text-3xl font-bold">{unit.title}</h1>
                 </div>
-                <h1 className="text-3xl font-bold">{unit.title}</h1>
+                <p className="text-white/80">
+                  {unit.topics.length} topics • {unit.exercises.length} exercises
+                </p>
               </div>
-              <p className="text-white/80">
-                {unit.topics.length} topics • {unit.exercises.length} exercises
-              </p>
-            </div>
             {!completedUnits.has(unit.id) ? (
               <button
                 onClick={() => markUnitComplete(unit.id)}
@@ -1154,9 +1212,62 @@ const DistributedSystemsApp = () => {
             })}
           </div>
         </div>
+
+        {/* Next/Previous Unit Navigation */}
+        <div className="bg-white rounded-xl shadow-md p-8 mb-8">
+          <div className="flex items-center justify-between gap-4">
+            {prevUnit ? (
+              <button
+                onClick={() => {
+                  setCurrentUnit(prevUnit);
+                  setCurrentPdfPage(null);
+                  window.scrollTo(0, 0);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors group"
+              >
+                <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                <div className="text-left">
+                  <div className="text-xs text-gray-500">Previous Unit</div>
+                  <div className="text-sm">Unit {prevUnit.id}: {prevUnit.title}</div>
+                </div>
+              </button>
+            ) : (
+              <div></div>
+            )}
+
+            {nextUnit ? (
+              <button
+                onClick={() => {
+                  setCurrentUnit(nextUnit);
+                  setCurrentPdfPage(null);
+                  window.scrollTo(0, 0);
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors group"
+              >
+                <div className="text-right">
+                  <div className="text-xs text-blue-100">Next Unit</div>
+                  <div className="text-sm">Unit {nextUnit.id}: {nextUnit.title}</div>
+                </div>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </button>
+            ) : (
+              <button
+                onClick={() => {
+                  setCurrentView('home');
+                  stopSpeaking();
+                }}
+                className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg font-semibold hover:bg-green-700 transition-colors"
+              >
+                <CheckCircle className="w-5 h-5" />
+                Complete Course
+              </button>
+            )}
+          </div>
+        </div>
       </div>
     </div>
-  );
+    );
+  };
 
   return (
     <div className="font-sans">
