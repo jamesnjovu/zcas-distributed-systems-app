@@ -59,8 +59,45 @@ export default function UnitView({
         onMarkComplete={() => markUnitComplete(unit.id)}
       />
 
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        {/* Quiz CTA Banner */}
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <AudioControls
+          speechSupported={speechSupported}
+          isSpeaking={isSpeaking}
+          isPaused={isPaused}
+          onPlayUnit={() => speakUnit(unit)}
+          onTogglePause={togglePauseSpeech}
+          onStop={stopSpeaking}
+        />
+
+        {/* Two Column Layout - Content Left, PDF Right */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column - Content */}
+          <div className="space-y-8">
+            <UnitSummary
+              unit={unit}
+              speechSupported={speechSupported}
+              onSpeakText={speakText}
+            />
+
+            <Topics unit={unit} />
+
+            <Exercises unit={unit} />
+          </div>
+
+          {/* Right Column - PDF Viewer */}
+          <div className="lg:sticky lg:top-24 lg:h-fit">
+            <PDFViewer unit={unit} isClient={isClient} />
+          </div>
+        </div>
+
+        <UnitNavigation
+          prevUnit={prevUnit}
+          nextUnit={nextUnit}
+          onNavigate={handleNavigate}
+          onComplete={handleComplete}
+        />
+        
+      {/* Quiz CTA Banner - Full Width */}
         <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl shadow-lg p-6 mb-8 text-white">
           <div className="flex items-center justify-between flex-wrap gap-4">
             <div className="flex items-center gap-3">
@@ -81,34 +118,6 @@ export default function UnitView({
             </button>
           </div>
         </div>
-
-        <AudioControls
-          speechSupported={speechSupported}
-          isSpeaking={isSpeaking}
-          isPaused={isPaused}
-          onPlayUnit={() => speakUnit(unit)}
-          onTogglePause={togglePauseSpeech}
-          onStop={stopSpeaking}
-        />
-
-        <UnitSummary
-          unit={unit}
-          speechSupported={speechSupported}
-          onSpeakText={speakText}
-        />
-
-        <PDFViewer unit={unit} isClient={isClient} />
-
-        <Topics unit={unit} />
-
-        <Exercises unit={unit} />
-
-        <UnitNavigation
-          prevUnit={prevUnit}
-          nextUnit={nextUnit}
-          onNavigate={handleNavigate}
-          onComplete={handleComplete}
-        />
       </div>
     </div>
   );

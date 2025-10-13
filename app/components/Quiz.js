@@ -144,7 +144,7 @@ export default function Quiz({ unitId, onBack }) {
                 <span className="font-bold">{score.total}</span> questions correct!
               </p>
               {score.percentage >= 80 && (
-                <p className="text-green-600 font-semibold mt-2">🎉 Excellent work! You've mastered this unit!</p>
+                <p className="text-green-600 font-semibold mt-2">🎉 Excellent work! You&apos;ve mastered this unit!</p>
               )}
               {score.percentage >= 60 && score.percentage < 80 && (
                 <p className="text-blue-600 font-semibold mt-2">👍 Good job! Review the missed questions to improve.</p>
