@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { Trophy, CheckCircle, XCircle, RotateCcw, ArrowLeft, Clock, Target, BookOpen, AlertCircle } from 'lucide-react';
-import { quizData } from '../data/quizData1';
+import { quizData } from '../data/quizData';
 
 export default function Quiz({ unitId, onBack }) {
   const [currentQuestion, setCurrentQuestion] = useState(0);
