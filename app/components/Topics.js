@@ -48,7 +48,7 @@ export default function Topics({ unit }) {
               {isExpanded && (
                 <div className="px-4 pb-4 animate-fadeIn">
                   <div className="ml-11 p-4 bg-white rounded-lg border border-blue-200">
-                    <p className="text-gray-700 leading-relaxed text-sm">
+                    <p className="text-gray-700 leading-relaxed text-sm whitespace-pre-line">
                       {topic.summary}
                     </p>
                   </div>

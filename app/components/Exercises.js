@@ -71,7 +71,7 @@ export default function Exercises({ unit }) {
                       <div className="flex items-center justify-center w-8 h-8 rounded-full bg-purple-600 text-white font-bold text-sm flex-shrink-0">
                         A
                       </div>
-                      <p className="text-gray-800 leading-relaxed flex-1">
+                      <p className="text-gray-800 leading-relaxed flex-1 whitespace-pre-line">
                         {exercise.a}
                       </p>
                     </div>
