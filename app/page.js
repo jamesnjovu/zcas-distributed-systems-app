@@ -3,6 +3,7 @@
 import React, { useState } from 'react';
 import HomePage from './components/HomePage';
 import UnitView from './components/UnitView';
+import Quiz from './components/Quiz';
 import useSpeech from './hooks/useSpeech';
 import { courseData } from './data/courseData';
 
@@ -14,7 +15,7 @@ if (typeof window !== 'undefined') {
 }
 
 export default function DistributedSystemsApp() {
-  // View state
+  // View state - 'home', 'unit', or 'quiz'
   const [currentView, setCurrentView] = useState('home');
   const [currentUnit, setCurrentUnit] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,9 +59,20 @@ export default function DistributedSystemsApp() {
     window.scrollTo(0, 0);
   };
 
+  const handleStartQuiz = (unit) => {
+    setCurrentUnit(unit);
+    setCurrentView('quiz');
+    stopSpeaking(); // Stop any audio when starting quiz
+    window.scrollTo(0, 0);
+  };
+
   const handleBack = () => {
     setCurrentView('home');
     setCurrentUnit(null);
+  };
+
+  const handleBackToUnit = () => {
+    setCurrentView('unit');
   };
 
   const handleNavigate = (unit) => {
@@ -89,7 +101,7 @@ export default function DistributedSystemsApp() {
         }
       `}</style>
 
-      {currentView === 'home' ? (
+      {currentView === 'home' && (
         <HomePage
           courseData={courseData}
           searchQuery={searchQuery}
@@ -98,7 +110,9 @@ export default function DistributedSystemsApp() {
           completedUnits={completedUnits}
           onUnitSelect={handleUnitSelect}
         />
-      ) : (
+      )}
+
+      {currentView === 'unit' && (
         <UnitView
           unit={currentUnit}
           courseData={courseData}
@@ -106,6 +120,7 @@ export default function DistributedSystemsApp() {
           markUnitComplete={markUnitComplete}
           onBack={handleBack}
           onNavigate={handleNavigate}
+          onStartQuiz={handleStartQuiz}
           speechSupported={speechSupported}
           isSpeaking={isSpeaking}
           isPaused={isPaused}
@@ -113,6 +128,13 @@ export default function DistributedSystemsApp() {
           togglePauseSpeech={togglePauseSpeech}
           stopSpeaking={stopSpeaking}
           speakText={speakText}
+        />
+      )}
+
+      {currentView === 'quiz' && (
+        <Quiz
+          unitId={currentUnit.id}
+          onBack={handleBackToUnit}
         />
       )}
     </div>

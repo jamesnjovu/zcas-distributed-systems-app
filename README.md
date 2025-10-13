@@ -321,7 +321,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 📧 Contact
 
-Project Link: [https://github.com/YOUR_USERNAME/distributed-systems-app](https://github.com/YOUR_USERNAME/distributed-systems-app)
+Project Link: [https://github.com/jamesnjovu/distributed-systems-app](https://github.com/jamesnjovu/distributed-systems-app)
 
 ## 🎯 Study Tips
 

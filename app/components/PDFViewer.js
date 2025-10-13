@@ -18,28 +18,28 @@ export default function PDFViewer({ unit, isClient }) {
   const displayPage = currentPdfPage || startPage;
 
   return (
-    <div className="bg-white rounded-xl shadow-md p-8 mb-8 border-2 border-indigo-200">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <FileText className="w-6 h-6 text-indigo-600" />
+    <div className="bg-white rounded-xl shadow-md p-6 border-2 border-indigo-200">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+          <FileText className="w-5 h-5 text-indigo-600" />
           Course Material
         </h2>
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2">
           <button
             onClick={() => setShowPdfViewer(!showPdfViewer)}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg font-semibold hover:bg-indigo-200 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-100 text-indigo-700 rounded-lg font-semibold hover:bg-indigo-200 transition-colors"
           >
-            {showPdfViewer ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-            {showPdfViewer ? 'Hide PDF' : 'Show PDF'}
+            {showPdfViewer ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+            {showPdfViewer ? 'Hide' : 'Show'}
           </button>
           <a
             href={`/zcas-distributed-systems-app/distributed-systems-module.pdf#page=${startPage}`}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
+            className="flex items-center gap-1 px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg font-semibold hover:bg-indigo-700 transition-colors"
           >
-            <ExternalLink className="w-4 h-4" />
-            Open in New Tab
+            <ExternalLink className="w-3 h-3" />
+            New Tab
           </a>
         </div>
       </div>
@@ -142,7 +142,7 @@ export default function PDFViewer({ unit, isClient }) {
             </div>
           </div>
 
-          <div className="bg-white p-4 flex justify-center items-center min-h-[800px]">
+          <div className="bg-white p-4 flex justify-center items-center min-h-[600px] max-h-[70vh] overflow-auto">
             {isClient ? (
               <Document
                 file="/zcas-distributed-systems-app/distributed-systems-module.pdf"
