@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import HomePage from './components/HomePage';
 import UnitView from './components/UnitView';
 import Quiz from './components/Quiz';
+import ExamRevision from './components/ExamRevision';
 import useSpeech from './hooks/useSpeech';
 import { courseData } from './data/courseData';
 
@@ -15,7 +16,7 @@ if (typeof window !== 'undefined') {
 }
 
 export default function DistributedSystemsApp() {
-  // View state - 'home', 'unit', or 'quiz'
+  // View state - 'home', 'unit', 'quiz', or 'exam'
   const [currentView, setCurrentView] = useState('home');
   const [currentUnit, setCurrentUnit] = useState(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -66,6 +67,12 @@ export default function DistributedSystemsApp() {
     window.scrollTo(0, 0);
   };
 
+  const handleStartExamRevision = () => {
+    setCurrentView('exam');
+    stopSpeaking();
+    window.scrollTo(0, 0);
+  };
+
   const handleBack = () => {
     setCurrentView('home');
     setCurrentUnit(null);
@@ -109,6 +116,7 @@ export default function DistributedSystemsApp() {
           filteredUnits={filteredUnits}
           completedUnits={completedUnits}
           onUnitSelect={handleUnitSelect}
+          onStartExamRevision={handleStartExamRevision}
         />
       )}
 
@@ -135,6 +143,12 @@ export default function DistributedSystemsApp() {
         <Quiz
           unitId={currentUnit.id}
           onBack={handleBackToUnit}
+        />
+      )}
+
+      {currentView === 'exam' && (
+        <ExamRevision
+          onBack={handleBack}
         />
       )}
     </div>
