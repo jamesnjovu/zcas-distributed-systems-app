@@ -27,11 +27,12 @@ This file contains the development history, design decisions, and context for AI
 - **Built-in Optimization:** Image optimization, code splitting
 - **Developer Experience:** Hot reload, TypeScript support
 
-### Why Single Page Component?
-- **Simplicity:** All logic in one file for educational project
-- **State Management:** React hooks sufficient for app complexity
-- **No Server Logic:** Purely client-side application
-- **Easy to Understand:** Students can read and learn from code
+### Component Architecture (v1.1.0)
+- **Modular Design:** Separate components for each feature
+- **Single Responsibility:** Each component has one clear purpose
+- **Reusability:** Components can be used across different contexts
+- **Maintainability:** Easy to update and test individual components
+- **Separation of Concerns:** Data, UI, and logic are separated
 
 ### Why Tailwind CSS?
 - **Rapid Development:** Utility-first approach speeds up styling
@@ -84,25 +85,41 @@ Gradients:
 
 ## 🔧 Technical Implementation
 
-### Component Structure
+### Component Structure (v1.1.0)
 
 ```
+app/
+├── components/                  # UI Components
+│   ├── AudioControls.js        # Speech synthesis controls
+│   ├── Exercises.js            # Q&A practice sections
+│   ├── Header.js               # Unit page header
+│   ├── HomePage.js             # Main landing page
+│   ├── PDFViewer.js           # PDF viewing with navigation
+│   ├── SearchBar.js           # Global search functionality
+│   ├── Topics.js              # Expandable topic sections
+│   ├── UnitCard.js            # Individual unit card
+│   ├── UnitNavigation.js      # Previous/Next navigation
+│   ├── UnitSummary.js         # Summary and key points
+│   └── UnitView.js            # Complete unit view container
+├── data/
+│   └── courseData.js          # All course content
+├── hooks/
+│   └── useSpeech.js          # Custom speech synthesis hook
+└── page.js                    # Main app component (90 lines)
+
+Component Hierarchy:
 DistributedSystemsApp (Root)
 ├── HomePage
-│   └── Unit Cards (map)
+│   ├── SearchBar
+│   └── UnitCard (×10)
 └── UnitView
-    ├── Audio Controls
-    ├── Summary Section
-    │   └── Key Points (map)
-    ├── PDF Viewer Section
-    │   ├── Toggle Controls
-    │   ├── Zoom Controls
-    │   └── iframe Viewer
-    ├── Topics Section
-    │   └── Expandable Topics (map)
-    ├── Exercises Section
-    │   └── Q&A Cards (map)
-    └── Navigation Controls
+    ├── Header
+    ├── AudioControls
+    ├── UnitSummary
+    ├── PDFViewer (React-PDF)
+    ├── Topics
+    ├── Exercises
+    └── UnitNavigation
 ```
 
 ### State Management
@@ -178,32 +195,32 @@ window.speechSynthesis.speak(utterance);
 
 ## 📄 PDF Integration
 
-### Implementation Approach
+### Implementation Approach (v1.1.0)
 
-**Method:** iframe with URL fragment
+**Method:** React-PDF Library
 ```javascript
-// URL with page parameter
-`/pdf-filename.pdf#page=${startPage}`
+// Dynamic imports to avoid SSR issues
+const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
+const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
+
+// Page navigation within unit range
+<Page pageNumber={displayPage} scale={pdfScale} />
 ```
 
-### Why iframe?
-- **Native Support:** Browsers have built-in PDF viewers
-- **No Dependencies:** No need for PDF.js library
-- **Performance:** Browser-optimized rendering
-- **Features:** Browser controls available in new tab
+### Why React-PDF?
+- **Advanced Controls:** Page-by-page navigation
+- **Zoom Controls:** Adjustable scale (75%-200%)
+- **Better UX:** Input field for direct page navigation
+- **Consistent Rendering:** Works across all browsers
+- **Unit Boundaries:** Restricts navigation to unit pages
 
-### Limitations
-- Browser-dependent rendering
-- Limited styling control
-- Mobile support varies
-- Some security restrictions
-
-### Future Improvements
-Consider PDF.js if needed:
-- Custom UI controls
-- Annotation support
-- Text selection/search
-- Consistent cross-browser rendering
+### Features
+- Previous/Next page buttons
+- First/Last page shortcuts
+- Page number input field
+- Zoom in/out controls
+- Visual page indicators
+- Unit-specific page ranges
 
 ## 🚀 Deployment Strategy
 
@@ -355,13 +372,15 @@ Consider PDF.js if needed:
 - Responsive design
 - GitHub Pages deployment
 
-### Future Versions (Planned)
-
-**v1.1.0**
-- [ ] Search functionality
-- [ ] Dark mode
-- [ ] Print-friendly view
-- [ ] Export notes
+### v1.1.0 - Component Architecture Update (Current)
+- ✅ **Search Functionality:** Global search across all content
+- ✅ **Unit Navigation:** Previous/Next buttons for sequential learning
+- ✅ **React-PDF Integration:** Page-by-page navigation with zoom
+- ✅ **Modular Architecture:** Refactored into 11+ reusable components
+- ✅ **Custom Hooks:** Extracted speech functionality to useSpeech hook
+- ✅ **Data Separation:** Course content moved to data layer
+- ✅ **Improved Performance:** Optimized rendering and state management
+- ✅ **Better Code Organization:** Components/Data/Hooks folder structure
 
 **v1.2.0**
 - [ ] Flashcard mode

@@ -15,6 +15,12 @@ An interactive, feature-rich study application for the Distributed Computing cou
 - **Detailed Topic Explanations** with expandable summaries
 - **Practice Exercises** with comprehensive answers
 
+### 🔍 Search & Navigation
+- **Global Search** - Find content across all units, topics, and exercises
+- **Smart Filtering** - Real-time results as you type
+- **Unit Navigation** - Previous/Next buttons for sequential learning
+- **Quick Jump** - Navigate directly to any unit from home
+
 ### 🔊 Audio Learning
 - **Text-to-Speech Integration** - Listen to any content
 - **Full Unit Audio** - Play entire units (15-20 minutes each)
@@ -23,10 +29,11 @@ An interactive, feature-rich study application for the Distributed Computing cou
 - **Playback Controls** - Play, Pause, Resume, Stop
 
 ### 📄 PDF Integration
-- **Embedded PDF Viewer** - View course material directly in app
-- **Unit-Specific Pages** - Automatically shows relevant pages
-- **Zoom Controls** - Adjust PDF size (50%-200%)
-- **Toggle View** - Show/hide PDF as needed
+- **React-PDF Viewer** - Advanced PDF rendering with page-by-page navigation
+- **Unit-Specific Pages** - Automatically shows relevant pages for each unit
+- **Page Navigation** - Previous/Next/First/Last page controls
+- **Zoom Controls** - Adjust PDF size (75%-200%)
+- **Page Input** - Jump to any page within unit range
 - **External Viewer** - Open in new tab for full features
 
 ### 🎯 Progress Tracking
@@ -36,6 +43,7 @@ An interactive, feature-rich study application for the Distributed Computing cou
 - **Persistent State** - Progress saved during session
 
 ### 🎨 Modern UI/UX
+- **Modular Components** - Clean, maintainable code architecture
 - **Beautiful Gradients** - Eye-catching color schemes
 - **Smooth Animations** - Fade-ins and transitions
 - **Responsive Design** - Works on all device sizes
@@ -79,16 +87,33 @@ An interactive, feature-rich study application for the Distributed Computing cou
 ```
 distributed-systems-app/
 ├── app/
-│   ├── page.js              # Main application component
-│   ├── layout.js            # Root layout configuration
-│   └── globals.css          # Global styles with Tailwind
+│   ├── components/          # Reusable UI components
+│   │   ├── AudioControls.js    # Text-to-speech controls
+│   │   ├── Exercises.js        # Q&A practice sections
+│   │   ├── Header.js           # Unit page header
+│   │   ├── HomePage.js         # Main landing page
+│   │   ├── PDFViewer.js       # PDF viewing component
+│   │   ├── SearchBar.js        # Search functionality
+│   │   ├── Topics.js           # Expandable topics
+│   │   ├── UnitCard.js         # Unit card component
+│   │   ├── UnitNavigation.js   # Previous/Next navigation
+│   │   ├── UnitSummary.js      # Summary and key points
+│   │   └── UnitView.js         # Complete unit view
+│   ├── data/
+│   │   └── courseData.js       # All course content data
+│   ├── hooks/
+│   │   └── useSpeech.js        # Custom speech synthesis hook
+│   ├── page.js                 # Main app component
+│   ├── layout.js               # Root layout configuration
+│   └── globals.css             # Global styles with Tailwind
 ├── public/
-│   └── Distributed Systems Courrse Module.pdf  # Course PDF
-├── package.json             # Dependencies and scripts
-├── next.config.js           # Next.js configuration
-├── tailwind.config.js       # Tailwind CSS configuration
-├── README.md               # This file
-└── CLAUDE.md               # AI development context
+│   └── distributed-systems-module.pdf  # Course PDF
+├── package.json                # Dependencies and scripts
+├── next.config.mjs            # Next.js configuration
+├── postcss.config.mjs         # PostCSS configuration
+├── tailwind.config.js         # Tailwind CSS configuration
+├── README.md                  # This file
+└── CLAUDE.md                  # AI development context
 ```
 
 ## 🎓 Course Content
@@ -154,12 +179,14 @@ distributed-systems-app/
 
 ## 🛠️ Technology Stack
 
-- **Framework:** Next.js 14 (App Router)
-- **UI Library:** React 18
-- **Styling:** Tailwind CSS
+- **Framework:** Next.js 15 (App Router)
+- **UI Library:** React 19
+- **Styling:** Tailwind CSS v4
 - **Icons:** Lucide React
 - **Text-to-Speech:** Web Speech API
-- **PDF Viewing:** Browser Native iframe
+- **PDF Viewing:** React-PDF Library
+- **Build Tool:** Turbopack (development)
+- **Architecture:** Modular Component-Based
 
 ## 📖 Usage Guide
 
@@ -305,9 +332,18 @@ Project Link: [https://github.com/YOUR_USERNAME/distributed-systems-app](https:/
 5. **Mark Progress** - Track completed units for motivation
 6. **Review Regularly** - Spaced repetition improves retention
 
-## 🚀 Future Enhancements
+## 🚀 Recent Updates
 
-- [ ] Add search functionality
+### Version 1.1.0 (Latest)
+- ✅ **Search Functionality** - Find content across all units
+- ✅ **Unit Navigation** - Previous/Next buttons for sequential learning
+- ✅ **React-PDF Integration** - Page-by-page PDF navigation with zoom
+- ✅ **Modular Architecture** - Refactored into clean, reusable components
+- ✅ **Custom Hooks** - Extracted speech functionality to custom hook
+- ✅ **Improved Performance** - Optimized component rendering
+
+## 🔮 Future Enhancements
+
 - [ ] Include flashcards for quick review
 - [ ] Add quiz mode with scoring
 - [ ] Enable note-taking feature
@@ -315,6 +351,9 @@ Project Link: [https://github.com/YOUR_USERNAME/distributed-systems-app](https:/
 - [ ] Include practice exam questions
 - [ ] Add dark mode support
 - [ ] Enable offline access with PWA
+- [ ] Add keyboard shortcuts
+- [ ] Export progress data
+- [ ] Multi-language support
 
 ---
 

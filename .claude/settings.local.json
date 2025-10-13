@@ -4,7 +4,10 @@
       "Bash(dir)",
       "Bash(npm run dev)",
       "Bash(npm install:*)",
-      "Bash(npm run build)"
+      "Bash(npm run build)",
+      "Bash(npm run deploy)",
+      "Bash(npx gh-pages-clean:*)",
+      "Bash(npx gh-pages:*)"
     ],
     "deny": [],
     "ask": []
