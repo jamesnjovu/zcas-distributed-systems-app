@@ -9,7 +9,8 @@
       "Bash(npx gh-pages-clean:*)",
       "Bash(npx gh-pages:*)",
       "Bash(npx serve:*)",
-      "Bash(timeout /t 10)"
+      "Bash(timeout /t 10)",
+      "Bash(node -e:*)"
     ],
     "deny": [],
     "ask": []

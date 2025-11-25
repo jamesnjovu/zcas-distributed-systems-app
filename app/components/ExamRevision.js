@@ -35,19 +35,43 @@ export default function ExamRevision({ onBack, examState, updateExamState, setEx
   const ExamPractice = () => {
     const question = examQuestions[questionIndex];
     const progress = ((questionIndex + 1) / examQuestions.length) * 100;
+    const hasSubQuestions = question.subQuestions && question.subQuestions.length > 0;
+
+    // Helper to build full text for a question (handles both formats)
+    const buildQuestionText = (q) => {
+      if (q.subQuestions) {
+        let fullText = `${q.title || `Question ${questionIndex + 1}`}. `;
+        q.subQuestions.forEach((sub) => {
+          fullText += `Part ${sub.id}. ${sub.question}. `;
+        });
+        return fullText;
+      }
+      return `Question ${questionIndex + 1}. ${q.question}`;
+    };
+
+    const buildAnswerText = (q) => {
+      if (q.subQuestions) {
+        let fullText = 'Answer: ';
+        q.subQuestions.forEach((sub) => {
+          fullText += `Part ${sub.id}. ${sub.answer}. `;
+        });
+        return fullText;
+      }
+      return `Answer: ${q.answer}`;
+    };
 
     const speakQuestion = () => {
-      const text = `Question ${questionIndex + 1}. ${question.question}`;
+      const text = buildQuestionText(question);
       speakText(text);
     };
 
     const speakAnswer = () => {
-      const text = `Answer: ${question.answer}`;
+      const text = buildAnswerText(question);
       speakText(text);
     };
 
     const speakAll = () => {
-      const text = `Question ${questionIndex + 1}. ${question.question}. Answer: ${question.answer}`;
+      const text = buildQuestionText(question) + '. ' + buildAnswerText(question);
 
       // Callback to auto-advance to next question after speaking
       const onSpeechEnd = () => {
@@ -60,13 +84,25 @@ export default function ExamRevision({ onBack, examState, updateExamState, setEx
           // Wait a bit for state to update, then speak the next question
           setTimeout(() => {
             const nextQuestion = examQuestions[questionIndex + 1];
-            const nextText = `Question ${questionIndex + 2}. ${nextQuestion.question}. Answer: ${nextQuestion.answer}`;
+            const nextText = buildQuestionText(nextQuestion) + '. ' + buildAnswerText(nextQuestion);
             speakText(nextText, onSpeechEnd); // Recursively call with same callback
           }, 500);
         }
       };
 
       speakText(text, onSpeechEnd);
+    };
+
+    // Speak individual sub-question
+    const speakSubQuestion = (subQuestion) => {
+      const text = `Part ${subQuestion.id}. ${subQuestion.question}`;
+      speakText(text);
+    };
+
+    // Speak individual sub-answer
+    const speakSubAnswer = (subQuestion) => {
+      const text = `Answer to part ${subQuestion.id}. ${subQuestion.answer}`;
+      speakText(text);
     };
 
     return (
@@ -150,27 +186,125 @@ export default function ExamRevision({ onBack, examState, updateExamState, setEx
               <div className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-3">
                 {question.unit}
               </div>
-              <div className="text-gray-900 text-lg leading-relaxed whitespace-pre-line">
-                {question.question}
-              </div>
+              {hasSubQuestions ? (
+                <div className="text-gray-900 text-xl font-bold mb-6">
+                  {question.title}
+                </div>
+              ) : (
+                <div className="text-gray-900 text-lg leading-relaxed whitespace-pre-line">
+                  {question.question}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* Key Points */}
-          <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-6 mb-6 border-2 border-amber-200">
-            <div className="flex items-center gap-2 mb-3">
-              <Lightbulb className="w-5 h-5 text-amber-600" />
-              <h3 className="font-bold text-amber-900">Key Points to Cover</h3>
-            </div>
-            <ul className="space-y-2">
-              {question.points.map((point, idx) => (
-                <li key={idx} className="flex items-start gap-2 text-amber-800">
-                  <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0" />
-                  <span>{point}</span>
-                </li>
+          {/* Sub-Questions (if any) */}
+          {hasSubQuestions ? (
+            <div className="space-y-6 mb-6">
+              {question.subQuestions.map((subQ, idx) => (
+                <div key={subQ.id} className="border-l-4 border-blue-400 pl-6 py-2">
+                  {/* Sub-Question */}
+                  <div className="mb-4">
+                    <div className="flex items-start justify-between gap-4 mb-3">
+                      <div className="flex-1">
+                        <div className="inline-block px-2 py-1 bg-blue-50 text-blue-700 rounded text-sm font-bold mb-2">
+                          Part {subQ.id}
+                        </div>
+                        <div className="text-gray-900 leading-relaxed whitespace-pre-line">
+                          {subQ.question}
+                        </div>
+                      </div>
+                      {speechSupported && (
+                        <button
+                          onClick={() => speakSubQuestion(subQ)}
+                          disabled={isSpeaking}
+                          className="flex-shrink-0 p-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                          title="Read this part"
+                        >
+                          <Volume2 className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+
+                    {/* Key Points for this sub-question */}
+                    {subQ.points && subQ.points.length > 0 && (
+                      <div className="bg-amber-50 rounded-lg p-4 mt-3 border border-amber-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Lightbulb className="w-4 h-4 text-amber-600" />
+                          <h4 className="font-semibold text-amber-900 text-sm">Key Points</h4>
+                        </div>
+                        <ul className="space-y-1">
+                          {subQ.points.map((point, pidx) => (
+                            <li key={pidx} className="flex items-start gap-2 text-amber-800 text-sm">
+                              <CheckCircle className="w-3 h-3 mt-1 flex-shrink-0" />
+                              <span>{point}</span>
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Sub-Answer */}
+                  {answerShown && (
+                    <div className="mt-4 p-4 bg-green-50 rounded-lg border border-green-200 animate-fadeIn">
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Award className="w-5 h-5 text-green-600" />
+                            <h4 className="font-semibold text-green-900">Answer</h4>
+                          </div>
+                          <div className="text-gray-800 text-sm leading-relaxed whitespace-pre-line">
+                            {subQ.answer}
+                          </div>
+                          {/* Image support for answers */}
+                          {subQ.image && (
+                            <div className="mt-4">
+                              <img
+                                src={subQ.image}
+                                alt={`Diagram for part ${subQ.id}`}
+                                className="max-w-full h-auto rounded-lg border-2 border-green-300 shadow-md"
+                              />
+                            </div>
+                          )}
+                        </div>
+                        {speechSupported && (
+                          <button
+                            onClick={() => speakSubAnswer(subQ)}
+                            disabled={isSpeaking}
+                            className="flex-shrink-0 p-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                            title="Read this answer"
+                          >
+                            <Volume2 className="w-4 h-4" />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
               ))}
-            </ul>
-          </div>
+            </div>
+          ) : (
+            <>
+              {/* Key Points (old format) */}
+              {question.points && question.points.length > 0 && (
+                <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-lg p-6 mb-6 border-2 border-amber-200">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Lightbulb className="w-5 h-5 text-amber-600" />
+                    <h3 className="font-bold text-amber-900">Key Points to Cover</h3>
+                  </div>
+                  <ul className="space-y-2">
+                    {question.points.map((point, idx) => (
+                      <li key={idx} className="flex items-start gap-2 text-amber-800">
+                        <CheckCircle className="w-4 h-4 mt-1 flex-shrink-0" />
+                        <span>{point}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </>
+          )}
 
           {/* Show Answer Button */}
           <button
@@ -184,8 +318,8 @@ export default function ExamRevision({ onBack, examState, updateExamState, setEx
             {answerShown ? '✓ Answer Shown' : '👁️ Show Model Answer'}
           </button>
 
-          {/* Answer */}
-          {answerShown && (
+          {/* Answer (old format - only if no sub-questions) */}
+          {!hasSubQuestions && answerShown && (
             <div className="mt-6 p-6 bg-gradient-to-br from-green-50 to-teal-50 rounded-lg border-2 border-green-200 animate-fadeIn">
               <div className="flex items-center gap-2 mb-4">
                 <Award className="w-6 h-6 text-green-600" />
