@@ -350,39 +350,69 @@ export default function ExamRevision({ onBack, examState, updateExamState, setEx
 
         {/* Navigation */}
         <div className="bg-white rounded-xl shadow-lg p-6">
-          <div className="flex justify-between items-center">
-            <button
-              onClick={() => {
-                stopSpeaking();
-                setCurrentQuestion(Math.max(0, questionIndex - 1));
-                setShowAnswer(false);
-                window.scrollTo(0, 0);
-              }}
-              disabled={questionIndex === 0}
-              className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <ChevronLeft className="w-5 h-5" />
-              Previous
-            </button>
+          <div className="flex flex-col gap-4">
+            {/* Question Navigation Buttons */}
+            <div className="flex justify-between items-center">
+              <button
+                onClick={() => {
+                  stopSpeaking();
+                  setCurrentQuestion(Math.max(0, questionIndex - 1));
+                  setShowAnswer(false);
+                  window.scrollTo(0, 0);
+                }}
+                disabled={questionIndex === 0}
+                className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <ChevronLeft className="w-5 h-5" />
+                Previous
+              </button>
 
-            <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{questionIndex + 1}</div>
-              <div className="text-sm text-gray-600">of {examQuestions.length}</div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-gray-900">{questionIndex + 1}</div>
+                <div className="text-sm text-gray-600">of {examQuestions.length}</div>
+              </div>
+
+              <button
+                onClick={() => {
+                  stopSpeaking();
+                  setCurrentQuestion(Math.min(examQuestions.length - 1, questionIndex + 1));
+                  setShowAnswer(false);
+                  window.scrollTo(0, 0);
+                }}
+                disabled={questionIndex === examQuestions.length - 1}
+                className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Next
+                <ChevronRight className="w-5 h-5" />
+              </button>
             </div>
 
-            <button
-              onClick={() => {
-                stopSpeaking();
-                setCurrentQuestion(Math.min(examQuestions.length - 1, questionIndex + 1));
-                setShowAnswer(false);
-                window.scrollTo(0, 0);
-              }}
-              disabled={questionIndex === examQuestions.length - 1}
-              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-              <ChevronRight className="w-5 h-5" />
-            </button>
+            {/* Go to Question Input */}
+            <div className="flex items-center justify-center gap-3 pt-4 border-t border-gray-200">
+              <label htmlFor="goToQuestion" className="text-sm font-semibold text-gray-700">
+                Go to Question:
+              </label>
+              <input
+                id="goToQuestion"
+                type="number"
+                min="1"
+                max={examQuestions.length}
+                placeholder={`1-${examQuestions.length}`}
+                onChange={(e) => {
+                  const val = parseInt(e.target.value);
+                  if (val >= 1 && val <= examQuestions.length) {
+                    stopSpeaking();
+                    setCurrentQuestion(val - 1);
+                    setShowAnswer(false);
+                    window.scrollTo(0, 0);
+                  }
+                }}
+                className="w-20 text-center bg-white border-2 border-gray-300 rounded-lg px-3 py-2 text-sm font-semibold focus:border-blue-500 focus:outline-none"
+              />
+              <span className="text-sm text-gray-600">
+                (1 to {examQuestions.length})
+              </span>
+            </div>
           </div>
         </div>
       </div>
