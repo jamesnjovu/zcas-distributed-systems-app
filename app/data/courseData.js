@@ -242,6 +242,10 @@ export const courseData = {
       ],
       exercises: [
         {
+          q: "The caller process of an RPC must wait for a reply from the callee process after making a call. Explain how this can actually be done.",
+          a: "The caller process waits for a reply through the following mechanism:\n1) Blocking mechanism: When the client makes an RPC call, the client process is suspended (blocked) until the reply arrives from the server.\n\n2) Implementation steps:\n- Client calls the client stub (appears as local procedure call)\n- Client stub packs the request into a message\n- Client stub asks local RPCRuntime to send the message\n- Client process is BLOCKED at this point\n- RPCRuntime sends message to server and waits\n- Server processes the request and sends reply back\n- Client's RPCRuntime receives the reply message\n- Client stub unpacks the result\n- Client process is UNBLOCKED and receives the result\n\n3) Timeout mechanism: To avoid indefinite waiting, a timeout period is set. If no reply arrives within the timeout:\n- Assume message was lost\n- Retransmit the request\n- Or report failure to the client\n\n4) Acknowledgment protocol: The RPC system uses acknowledgment messages and sequence numbers to:\n- Detect lost messages\n- Handle duplicate messages\n- Match replies to outstanding calls\n\nThis synchronous blocking behavior makes RPC transparent - it looks like a normal local procedure call to the programmer.",
+        },
+        {
           q: "How is optimization of RPC done to enhance the performance?",
           a: "Optimization techniques:\n1) Lightweight RPC for same-machine communication using handoff scheduling,\n2) Simple control transfer mechanisms,\n3) Batch multiple requests together,\n4) Cache domains on idle processors,\n5) Minimize data copying (direct memory access),\n6) Use concurrent access to multiple servers via threads or early reply,\n7) Reduce context switching overhead, 8) Optimize for cross-domain vs cross-machine communication,\n9) Use efficient marshaling with inline code generation.",
         },

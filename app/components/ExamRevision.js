@@ -1,7 +1,11 @@
 'use client';
 
-import { useState } from 'react';
-import { BookOpen, Brain, CheckCircle, XCircle, RotateCw, ChevronLeft, ChevronRight, Lightbulb, Award } from 'lucide-react';
+import { BookOpen, Brain, CheckCircle, XCircle, RotateCw, ChevronLeft, ChevronRight, Lightbulb, Award, FileText, Volume2, VolumeX, Pause, Play } from 'lucide-react';
+import dynamic from 'next/dynamic';
+import useSpeech from '../hooks/useSpeech';
+
+const Document = dynamic(() => import('react-pdf').then(mod => mod.Document), { ssr: false });
+const Page = dynamic(() => import('react-pdf').then(mod => mod.Page), { ssr: false });
 
 // Exam questions extracted from the past paper
 import { examQuestions } from '../data/examQuestions';
@@ -10,25 +14,122 @@ import { examQuestions } from '../data/examQuestions';
 import { flashcards } from '../data/flashCards';
 
 
-export default function ExamRevision({ onBack }) {
-  const [mode, setMode] = useState('menu'); // 'menu', 'exam', 'flashcards'
-  const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [showAnswer, setShowAnswer] = useState(false);
-  const [currentCard, setCurrentCard] = useState(0);
-  const [isFlipped, setIsFlipped] = useState(false);
-  const [masteredCards, setMasteredCards] = useState(new Set());
+export default function ExamRevision({ onBack, examState, updateExamState, setExamMode, setCurrentQuestion, setShowAnswer, setCurrentCard, setIsFlipped, addMasteredCard, resetMasteredCards, setPdfState }) {
+  // Destructure exam state from props (managed by central state)
+  const {
+    mode,
+    currentQuestion: questionIndex,
+    showAnswer: answerShown,
+    currentCard: cardIndex,
+    isFlipped: cardFlipped,
+    masteredCards,
+    numPages,
+    pageNumber,
+    pdfScale,
+  } = examState;
+
+  // Text-to-Speech hook
+  const { isSpeaking, isPaused, speechSupported, speakText, stopSpeaking, togglePauseSpeech } = useSpeech();
 
   // Exam Practice Mode
   const ExamPractice = () => {
-    const question = examQuestions[currentQuestion];
-    const progress = ((currentQuestion + 1) / examQuestions.length) * 100;
+    const question = examQuestions[questionIndex];
+    const progress = ((questionIndex + 1) / examQuestions.length) * 100;
+
+    const speakQuestion = () => {
+      const text = `Question ${questionIndex + 1}. ${question.question}`;
+      speakText(text);
+    };
+
+    const speakAnswer = () => {
+      const text = `Answer: ${question.answer}`;
+      speakText(text);
+    };
+
+    const speakAll = () => {
+      const text = `Question ${questionIndex + 1}. ${question.question}. Answer: ${question.answer}`;
+
+      // Callback to auto-advance to next question after speaking
+      const onSpeechEnd = () => {
+        // If there's a next question, auto-advance and continue reading
+        if (questionIndex < examQuestions.length - 1) {
+          setShowAnswer(false);
+          setCurrentQuestion(questionIndex + 1);
+          window.scrollTo(0, 0);
+
+          // Wait a bit for state to update, then speak the next question
+          setTimeout(() => {
+            const nextQuestion = examQuestions[questionIndex + 1];
+            const nextText = `Question ${questionIndex + 2}. ${nextQuestion.question}. Answer: ${nextQuestion.answer}`;
+            speakText(nextText, onSpeechEnd); // Recursively call with same callback
+          }, 500);
+        }
+      };
+
+      speakText(text, onSpeechEnd);
+    };
 
     return (
       <div className="max-w-4xl mx-auto">
+        {/* Audio Controls */}
+        {speechSupported && (
+          <div className="bg-gradient-to-r from-green-500 to-teal-500 rounded-xl shadow-lg p-4 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-white">
+                <Volume2 className="w-5 h-5" />
+                <span className="font-semibold">Audio Controls</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={speakQuestion}
+                  disabled={isSpeaking}
+                  className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Read Question
+                </button>
+                {answerShown && (
+                  <>
+                    <button
+                      onClick={speakAnswer}
+                      disabled={isSpeaking}
+                      className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Read Answer
+                    </button>
+                    <button
+                      onClick={speakAll}
+                      disabled={isSpeaking}
+                      className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Read All
+                    </button>
+                  </>
+                )}
+                {isSpeaking && (
+                  <>
+                    <button
+                      onClick={togglePauseSpeech}
+                      className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors"
+                    >
+                      {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+                    </button>
+                    <button
+                      onClick={stopSpeaking}
+                      className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors"
+                    >
+                      <VolumeX className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Progress */}
         <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
           <div className="flex justify-between items-center mb-2">
-            <span className="text-sm font-semibold text-gray-700">Question {currentQuestion + 1} of {examQuestions.length}</span>
+            <span className="text-sm font-semibold text-gray-700">Question {questionIndex + 1} of {examQuestions.length}</span>
             <span className="text-sm text-gray-600">{Math.round(progress)}% Complete</span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
@@ -43,7 +144,7 @@ export default function ExamRevision({ onBack }) {
         <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
           <div className="flex items-start gap-4 mb-6">
             <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold flex-shrink-0">
-              Q{currentQuestion + 1}
+              Q{questionIndex + 1}
             </div>
             <div className="flex-1">
               <div className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-3">
@@ -73,18 +174,18 @@ export default function ExamRevision({ onBack }) {
 
           {/* Show Answer Button */}
           <button
-            onClick={() => setShowAnswer(!showAnswer)}
+            onClick={() => setShowAnswer(!answerShown)}
             className={`w-full py-4 rounded-lg font-semibold transition-all ${
-              showAnswer
+              answerShown
                 ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white'
                 : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg'
             }`}
           >
-            {showAnswer ? '✓ Answer Shown' : '👁️ Show Model Answer'}
+            {answerShown ? '✓ Answer Shown' : '👁️ Show Model Answer'}
           </button>
 
           {/* Answer */}
-          {showAnswer && (
+          {answerShown && (
             <div className="mt-6 p-6 bg-gradient-to-br from-green-50 to-teal-50 rounded-lg border-2 border-green-200 animate-fadeIn">
               <div className="flex items-center gap-2 mb-4">
                 <Award className="w-6 h-6 text-green-600" />
@@ -102,11 +203,12 @@ export default function ExamRevision({ onBack }) {
           <div className="flex justify-between items-center">
             <button
               onClick={() => {
-                setCurrentQuestion(Math.max(0, currentQuestion - 1));
+                stopSpeaking();
+                setCurrentQuestion(Math.max(0, questionIndex - 1));
                 setShowAnswer(false);
                 window.scrollTo(0, 0);
               }}
-              disabled={currentQuestion === 0}
+              disabled={questionIndex === 0}
               className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -114,17 +216,18 @@ export default function ExamRevision({ onBack }) {
             </button>
 
             <div className="text-center">
-              <div className="text-2xl font-bold text-gray-900">{currentQuestion + 1}</div>
+              <div className="text-2xl font-bold text-gray-900">{questionIndex + 1}</div>
               <div className="text-sm text-gray-600">of {examQuestions.length}</div>
             </div>
 
             <button
               onClick={() => {
-                setCurrentQuestion(Math.min(examQuestions.length - 1, currentQuestion + 1));
+                stopSpeaking();
+                setCurrentQuestion(Math.min(examQuestions.length - 1, questionIndex + 1));
                 setShowAnswer(false);
                 window.scrollTo(0, 0);
               }}
-              disabled={currentQuestion === examQuestions.length - 1}
+              disabled={questionIndex === examQuestions.length - 1}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
@@ -138,16 +241,84 @@ export default function ExamRevision({ onBack }) {
 
   // Flashcards Mode
   const FlashcardsMode = () => {
-    const card = flashcards[currentCard];
-    const progress = ((currentCard + 1) / flashcards.length) * 100;
+    const card = flashcards[cardIndex];
+    const progress = ((cardIndex + 1) / flashcards.length) * 100;
     const masteredCount = masteredCards.size;
+
+    const speakFront = () => {
+      speakText(card.front);
+    };
+
+    const speakBack = () => {
+      speakText(card.back);
+    };
+
+    const speakBoth = () => {
+      const text = `Question: ${card.front}. Answer: ${card.back}`;
+      speakText(text);
+    };
 
     return (
       <div className="max-w-3xl mx-auto">
+        {/* Audio Controls */}
+        {speechSupported && (
+          <div className="bg-gradient-to-r from-green-500 to-teal-500 rounded-xl shadow-lg p-4 mb-6">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div className="flex items-center gap-2 text-white">
+                <Volume2 className="w-5 h-5" />
+                <span className="font-semibold">Audio Controls</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={speakFront}
+                  disabled={isSpeaking}
+                  className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  Read Question
+                </button>
+                {cardFlipped && (
+                  <>
+                    <button
+                      onClick={speakBack}
+                      disabled={isSpeaking}
+                      className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Read Answer
+                    </button>
+                    <button
+                      onClick={speakBoth}
+                      disabled={isSpeaking}
+                      className="px-4 py-2 bg-white/20 hover:bg-white/30 text-white rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      Read Both
+                    </button>
+                  </>
+                )}
+                {isSpeaking && (
+                  <>
+                    <button
+                      onClick={togglePauseSpeech}
+                      className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors"
+                    >
+                      {isPaused ? <Play className="w-5 h-5" /> : <Pause className="w-5 h-5" />}
+                    </button>
+                    <button
+                      onClick={stopSpeaking}
+                      className="p-2 bg-white/20 hover:bg-white/30 text-white rounded-lg transition-colors"
+                    >
+                      <VolumeX className="w-5 h-5" />
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="grid grid-cols-3 gap-4 mb-6">
           <div className="bg-white rounded-xl shadow-lg p-4 text-center">
-            <div className="text-3xl font-bold text-blue-600">{currentCard + 1}</div>
+            <div className="text-3xl font-bold text-blue-600">{cardIndex + 1}</div>
             <div className="text-sm text-gray-600">Current Card</div>
           </div>
           <div className="bg-white rounded-xl shadow-lg p-4 text-center">
@@ -177,15 +348,15 @@ export default function ExamRevision({ onBack }) {
         {/* Flashcard */}
         <div className="perspective-1000 mb-6">
           <div
-            onClick={() => setIsFlipped(!isFlipped)}
+            onClick={() => setIsFlipped(!cardFlipped)}
             className={`relative w-full h-96 cursor-pointer transition-transform duration-500 transform-style-3d ${
-              isFlipped ? 'rotate-y-180' : ''
+              cardFlipped ? 'rotate-y-180' : ''
             }`}
             style={{ transformStyle: 'preserve-3d' }}
           >
             {/* Front */}
             <div
-              className={`absolute inset-0 backface-hidden ${isFlipped ? 'invisible' : 'visible'}`}
+              className={`absolute inset-0 backface-hidden ${cardFlipped ? 'invisible' : 'visible'}`}
               style={{ backfaceVisibility: 'hidden' }}
             >
               <div className="h-full bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl shadow-2xl p-8 flex flex-col justify-center items-center text-white">
@@ -201,7 +372,7 @@ export default function ExamRevision({ onBack }) {
 
             {/* Back */}
             <div
-              className={`absolute inset-0 backface-hidden ${isFlipped ? 'visible' : 'invisible'}`}
+              className={`absolute inset-0 backface-hidden ${cardFlipped ? 'visible' : 'invisible'}`}
               style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
             >
               <div className="h-full bg-gradient-to-br from-green-500 to-teal-600 rounded-2xl shadow-2xl p-8 flex flex-col justify-center items-center text-white">
@@ -218,7 +389,7 @@ export default function ExamRevision({ onBack }) {
         </div>
 
         {/* Actions */}
-        {isFlipped && (
+        {cardFlipped && (
           <div className="bg-white rounded-xl shadow-lg p-6 mb-6 animate-fadeIn">
             <div className="text-center mb-4">
               <p className="text-gray-700 font-semibold">Did you know this?</p>
@@ -226,8 +397,9 @@ export default function ExamRevision({ onBack }) {
             <div className="grid grid-cols-2 gap-4">
               <button
                 onClick={() => {
+                  stopSpeaking();
                   setIsFlipped(false);
-                  setCurrentCard(Math.min(flashcards.length - 1, currentCard + 1));
+                  setCurrentCard(Math.min(flashcards.length - 1, cardIndex + 1));
                 }}
                 className="flex items-center justify-center gap-2 px-6 py-4 bg-red-100 text-red-700 rounded-lg font-semibold hover:bg-red-200 transition-colors"
               >
@@ -236,9 +408,10 @@ export default function ExamRevision({ onBack }) {
               </button>
               <button
                 onClick={() => {
-                  setMasteredCards(prev => new Set([...prev, currentCard]));
+                  stopSpeaking();
+                  addMasteredCard(cardIndex);
                   setIsFlipped(false);
-                  setCurrentCard(Math.min(flashcards.length - 1, currentCard + 1));
+                  setCurrentCard(Math.min(flashcards.length - 1, cardIndex + 1));
                 }}
                 className="flex items-center justify-center gap-2 px-6 py-4 bg-green-100 text-green-700 rounded-lg font-semibold hover:bg-green-200 transition-colors"
               >
@@ -254,10 +427,11 @@ export default function ExamRevision({ onBack }) {
           <div className="flex justify-between items-center">
             <button
               onClick={() => {
-                setCurrentCard(Math.max(0, currentCard - 1));
+                stopSpeaking();
+                setCurrentCard(Math.max(0, cardIndex - 1));
                 setIsFlipped(false);
               }}
-              disabled={currentCard === 0}
+              disabled={cardIndex === 0}
               className="flex items-center gap-2 px-6 py-3 bg-gray-100 text-gray-700 rounded-lg font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ChevronLeft className="w-5 h-5" />
@@ -266,7 +440,8 @@ export default function ExamRevision({ onBack }) {
 
             <button
               onClick={() => {
-                setMasteredCards(new Set());
+                stopSpeaking();
+                resetMasteredCards();
                 setCurrentCard(0);
                 setIsFlipped(false);
               }}
@@ -278,10 +453,11 @@ export default function ExamRevision({ onBack }) {
 
             <button
               onClick={() => {
-                setCurrentCard(Math.min(flashcards.length - 1, currentCard + 1));
+                stopSpeaking();
+                setCurrentCard(Math.min(flashcards.length - 1, cardIndex + 1));
                 setIsFlipped(false);
               }}
-              disabled={currentCard === flashcards.length - 1}
+              disabled={cardIndex === flashcards.length - 1}
               className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Next
@@ -293,9 +469,140 @@ export default function ExamRevision({ onBack }) {
     );
   };
 
+  // Past Papers Mode
+  const PastPapersMode = () => {
+    const handleZoomIn = () => setPdfState({ pdfScale: Math.min(pdfScale + 0.25, 2.0) });
+    const handleZoomOut = () => setPdfState({ pdfScale: Math.max(pdfScale - 0.25, 0.5) });
+
+    return (
+      <div className="max-w-5xl mx-auto">
+        <div className="bg-white rounded-xl shadow-lg p-6 mb-6">
+          <div className="flex flex-wrap items-center justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold text-gray-900 mb-2">Mid Semester Exam Paper</h2>
+              <p className="text-gray-600">Review past examination questions</p>
+            </div>
+
+            {/* Controls */}
+            <div className="flex items-center gap-4">
+              {/* Page Navigation */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => setPdfState({ pageNumber: 1 })}
+                  disabled={pageNumber <= 1}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold"
+                >
+                  First
+                </button>
+                <button
+                  onClick={() => setPdfState({ pageNumber: Math.max(1, pageNumber - 1) })}
+                  disabled={pageNumber <= 1}
+                  className="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronLeft className="w-5 h-5" />
+                </button>
+
+                <div className="flex items-center gap-2 bg-gray-100 px-4 py-2 rounded-lg">
+                  <input
+                    type="number"
+                    min="1"
+                    max={numPages || 1}
+                    value={pageNumber}
+                    onChange={(e) => {
+                      const val = parseInt(e.target.value);
+                      if (val >= 1 && val <= numPages) setPdfState({ pageNumber: val });
+                    }}
+                    className="w-16 text-center bg-white border border-gray-300 rounded px-2 py-1 text-sm font-semibold"
+                  />
+                  <span className="text-gray-600 text-sm">/ {numPages || '?'}</span>
+                </div>
+
+                <button
+                  onClick={() => setPdfState({ pageNumber: Math.min(numPages || 1, pageNumber + 1) })}
+                  disabled={pageNumber >= (numPages || 1)}
+                  className="p-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => setPdfState({ pageNumber: numPages || 1 })}
+                  disabled={pageNumber >= (numPages || 1)}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed text-sm font-semibold"
+                >
+                  Last
+                </button>
+              </div>
+
+              {/* Zoom Controls */}
+              <div className="flex items-center gap-2 border-l pl-4">
+                <button
+                  onClick={handleZoomOut}
+                  disabled={pdfScale <= 0.5}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+                >
+                  -
+                </button>
+                <span className="text-sm font-semibold text-gray-700 min-w-[60px] text-center">
+                  {Math.round(pdfScale * 100)}%
+                </span>
+                <button
+                  onClick={handleZoomIn}
+                  disabled={pdfScale >= 2.0}
+                  className="px-3 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed font-bold"
+                >
+                  +
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* PDF Viewer */}
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex flex-col items-center">
+            <Document
+              file="/mid_semester_exam_paper.pdf"
+              onLoadSuccess={({ numPages }) => setPdfState({ numPages })}
+              className="max-w-full"
+            >
+              <Page
+                pageNumber={pageNumber}
+                scale={pdfScale}
+                className="shadow-lg"
+                renderTextLayer={false}
+                renderAnnotationLayer={false}
+              />
+            </Document>
+          </div>
+        </div>
+
+        {/* Download Option */}
+        <div className="mt-6 bg-gradient-to-br from-indigo-50 to-purple-50 rounded-xl shadow-lg p-6 border-2 border-indigo-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-start gap-3">
+              <FileText className="w-6 h-6 text-indigo-600 mt-1" />
+              <div>
+                <h3 className="font-bold text-indigo-900 mb-1">Download PDF</h3>
+                <p className="text-sm text-indigo-700">Open in a new tab for full PDF features</p>
+              </div>
+            </div>
+            <a
+              href="/mid_semester_exam_paper.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-6 py-3 bg-gradient-to-r from-indigo-500 to-purple-500 text-white rounded-lg font-semibold hover:shadow-lg transition-all"
+            >
+              Open in New Tab
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   // Main Menu
   const Menu = () => (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-6xl mx-auto">
       <div className="text-center mb-12">
         <div className="inline-block p-4 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl mb-6">
           <Brain className="w-16 h-16 text-white" />
@@ -304,10 +611,10 @@ export default function ExamRevision({ onBack }) {
         <p className="text-xl text-gray-600">Master your Distributed Systems knowledge</p>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
         {/* Exam Practice */}
         <div
-          onClick={() => setMode('exam')}
+          onClick={() => setExamMode('exam')}
           className="group bg-white rounded-2xl shadow-lg p-8 cursor-pointer hover:shadow-2xl transition-all border-2 border-transparent hover:border-blue-500"
         >
           <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-blue-500 to-purple-500 text-white mb-6 group-hover:scale-110 transition-transform">
@@ -325,7 +632,7 @@ export default function ExamRevision({ onBack }) {
 
         {/* Flashcards */}
         <div
-          onClick={() => setMode('flashcards')}
+          onClick={() => setExamMode('flashcards')}
           className="group bg-white rounded-2xl shadow-lg p-8 cursor-pointer hover:shadow-2xl transition-all border-2 border-transparent hover:border-green-500"
         >
           <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-green-500 to-teal-500 text-white mb-6 group-hover:scale-110 transition-transform">
@@ -338,6 +645,24 @@ export default function ExamRevision({ onBack }) {
           <div className="flex items-center justify-between text-sm">
             <span className="text-green-600 font-semibold">{flashcards.length} Cards</span>
             <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-green-500 group-hover:translate-x-1 transition-all" />
+          </div>
+        </div>
+
+        {/* Past Papers */}
+        <div
+          onClick={() => setExamMode('pastpapers')}
+          className="group bg-white rounded-2xl shadow-lg p-8 cursor-pointer hover:shadow-2xl transition-all border-2 border-transparent hover:border-indigo-500"
+        >
+          <div className="flex items-center justify-center w-16 h-16 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white mb-6 group-hover:scale-110 transition-transform">
+            <FileText className="w-8 h-8" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-3">Past Exam Papers</h2>
+          <p className="text-gray-600 mb-4">
+            View and study past examination papers. Includes mid-semester and final exams.
+          </p>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-indigo-600 font-semibold">Mid Semester Exam</span>
+            <ChevronRight className="w-5 h-5 text-gray-400 group-hover:text-indigo-500 group-hover:translate-x-1 transition-all" />
           </div>
         </div>
       </div>
@@ -401,7 +726,8 @@ export default function ExamRevision({ onBack }) {
       {mode !== 'menu' && (
         <button
           onClick={() => {
-            setMode('menu');
+            stopSpeaking();
+            setExamMode('menu');
             setShowAnswer(false);
             setIsFlipped(false);
           }}
@@ -425,6 +751,7 @@ export default function ExamRevision({ onBack }) {
       {mode === 'menu' && <Menu />}
       {mode === 'exam' && <ExamPractice />}
       {mode === 'flashcards' && <FlashcardsMode />}
+      {mode === 'pastpapers' && <PastPapersMode />}
     </div>
   );
 }

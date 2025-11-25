@@ -13,7 +13,7 @@ export default function useSpeech() {
     }
   }, []);
 
-  const speakText = (text) => {
+  const speakText = (text, onEndCallback) => {
     if (!speechSupported) {
       alert('Text-to-speech is not supported in your browser.');
       return;
@@ -29,6 +29,10 @@ export default function useSpeech() {
     utterance.onend = () => {
       setIsSpeaking(false);
       setIsPaused(false);
+      // Call the callback if provided
+      if (onEndCallback && typeof onEndCallback === 'function') {
+        onEndCallback();
+      }
     };
 
     window.speechSynthesis.speak(utterance);

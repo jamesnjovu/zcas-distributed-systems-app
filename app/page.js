@@ -1,12 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React from 'react';
 import HomePage from './components/HomePage';
 import UnitView from './components/UnitView';
 import Quiz from './components/Quiz';
 import ExamRevision from './components/ExamRevision';
 import useSpeech from './hooks/useSpeech';
 import { courseData } from './data/courseData';
+import { useAppState } from './store/appState';
 
 // Set up PDF worker for react-pdf (only on client side)
 if (typeof window !== 'undefined') {
@@ -16,13 +17,29 @@ if (typeof window !== 'undefined') {
 }
 
 export default function DistributedSystemsApp() {
-  // View state - 'home', 'unit', 'quiz', or 'exam'
-  const [currentView, setCurrentView] = useState('home');
-  const [currentUnit, setCurrentUnit] = useState(null);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Progress state
-  const [completedUnits, setCompletedUnits] = useState(new Set());
+  // Centralized state management with localStorage persistence
+  const {
+    currentView,
+    currentUnit,
+    searchQuery,
+    setSearchQuery,
+    completedUnits,
+    markUnitComplete,
+    navigateToUnit,
+    navigateToHome,
+    navigateToQuiz,
+    navigateToExam,
+    examState,
+    updateExamState,
+    setExamMode,
+    setCurrentQuestion,
+    setShowAnswer,
+    setCurrentCard,
+    setIsFlipped,
+    addMasteredCard,
+    resetMasteredCards,
+    setPdfState,
+  } = useAppState();
 
   // Custom hook for speech functionality
   const {
@@ -55,39 +72,35 @@ export default function DistributedSystemsApp() {
 
   // Event handlers
   const handleUnitSelect = (unit) => {
-    setCurrentUnit(unit);
-    setCurrentView('unit');
+    navigateToUnit(unit);
     window.scrollTo(0, 0);
   };
 
   const handleStartQuiz = (unit) => {
-    setCurrentUnit(unit);
-    setCurrentView('quiz');
     stopSpeaking(); // Stop any audio when starting quiz
+    navigateToQuiz(unit);
     window.scrollTo(0, 0);
   };
 
   const handleStartExamRevision = () => {
-    setCurrentView('exam');
     stopSpeaking();
+    navigateToExam();
     window.scrollTo(0, 0);
   };
 
   const handleBack = () => {
-    setCurrentView('home');
-    setCurrentUnit(null);
+    navigateToHome();
   };
 
   const handleBackToUnit = () => {
-    setCurrentView('unit');
+    // Navigate back to the current unit
+    if (currentUnit) {
+      navigateToUnit(currentUnit);
+    }
   };
 
   const handleNavigate = (unit) => {
-    setCurrentUnit(unit);
-  };
-
-  const markUnitComplete = (unitId) => {
-    setCompletedUnits(prev => new Set([...prev, unitId]));
+    navigateToUnit(unit);
   };
 
   return (
@@ -149,6 +162,16 @@ export default function DistributedSystemsApp() {
       {currentView === 'exam' && (
         <ExamRevision
           onBack={handleBack}
+          examState={examState}
+          updateExamState={updateExamState}
+          setExamMode={setExamMode}
+          setCurrentQuestion={setCurrentQuestion}
+          setShowAnswer={setShowAnswer}
+          setCurrentCard={setCurrentCard}
+          setIsFlipped={setIsFlipped}
+          addMasteredCard={addMasteredCard}
+          resetMasteredCards={resetMasteredCards}
+          setPdfState={setPdfState}
         />
       )}
     </div>
