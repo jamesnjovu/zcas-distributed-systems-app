@@ -10,7 +10,12 @@
       "Bash(npx gh-pages:*)",
       "Bash(npx serve:*)",
       "Bash(timeout /t 10)",
-      "Bash(node -e:*)"
+      "Bash(node -e:*)",
+      "Bash(python convert_questions.py:*)",
+      "Bash(del:*)",
+      "Bash(python convert_q7_12.py:*)",
+      "mcp__ide__getDiagnostics",
+      "Bash(python:*)"
     ],
     "deny": [],
     "ask": []
