@@ -225,6 +225,8 @@ export const examQuestions = [
           "Server Stub",
           "Server",
         ],
+                image: "/zcas-distributed-systems-app/rpcm.jpg",
+
         answer:
           "Five Elements of an RPC Mechanism:\n\n1. **CLIENT**\n   - The process requesting a remote operation\n   - Makes procedure call (appears local)\n   - Blocks waiting for result\n   - Receives and uses return value\n   - Example: Application calling remote_add(5, 3)\n\n2. **CLIENT STUB (Proxy)**\n   - Packs (marshals) parameters and sends the request\n   - Intercepts local call\n   - Converts parameters to network format\n   - Sends message to server\n   - Waits for reply\n   - Unmarshals result and returns to client\n   - Acts as local representative of remote procedure\n\n3. **RPC RUNTIME**\n   - Handles communication, timeouts, and message delivery\n   - Manages network protocols (TCP/UDP)\n   - Implements reliability (retransmissions)\n   - Handles server location (binding)\n   - Manages connections\n   - Detects and handles failures\n   - Provides transport layer\n\n4. **SERVER STUB (Skeleton)**\n   - Unpacks parameters and calls the actual server function\n   - Receives request messages\n   - Unmarshals parameters\n   - Calls real server procedure\n   - Marshals return value\n   - Sends reply message\n   - Acts as receiver and dispatcher\n\n5. **SERVER**\n   - Performs the real work and returns results\n   - Implements actual procedure logic\n   - Computes result\n   - Returns value to server stub\n   - Unaware of RPC details (thinks it's local)\n   - Example: Actual add(a, b) { return a + b; } implementation\n\n**How They Work Together:**\n\n```\nClient → Client Stub → RPC Runtime → Network → RPC Runtime → Server Stub → Server\n         (marshal)     (send)                   (receive)     (unmarshal)    (execute)\n                                                 \nClient ← Client Stub ← RPC Runtime ← Network ← RPC Runtime ← Server Stub ← Server\n         (unmarshal)   (receive)                (send)        (marshal)      (return)\n```\n\nThese five components work together to make remote calls appear like normal local function calls, providing the transparency that is the core goal of RPC.",
       },
@@ -409,32 +411,73 @@ export const examQuestions = [
   {
     id: 10,
     unit: "Deadlock & Scalability",
-    question:
-      "i. Describe various deadlock handling techniques [10 Marks]\nii. Explain the principles for designing scalable distributed systems. [10 Marks]",
-    points: [
-      "Deadlock prevention",
-      "Deadlock avoidance",
-      "Deadlock detection",
-      "Scalability principles",
-      "Avoiding centralization",
+    title: "Question Ten [20 Marks]",
+    subQuestions: [
+      {
+        id: "i",
+        question:
+          "Describe various deadlock handling techniques [10 Marks]",
+        points: [
+          "Deadlock prevention",
+          "Deadlock avoidance",
+          "Deadlock detection",
+          "Distributed detection",
+        ],
+        answer:
+          "Deadlock Handling Techniques:\n\n**1. DEADLOCK PREVENTION:**\n\nBreak one of the four necessary conditions for deadlock:\n\n**Four Necessary Conditions:**\n1. Mutual Exclusion – Resource can't be shared\n2. Hold and Wait – Process holds resources while waiting for more\n3. No Preemption – Resources can't be forcibly taken\n4. Circular Wait – Circular chain of waiting processes\n\n**Prevention Strategies:**\n- **Avoid Hold-and-Wait:** Request all resources at once\n- **Allow Preemption:** Take resources from processes\n- **Resource Ordering:** Number resources; request in order (prevents circular wait)\n  Example: Always request R1 before R2 before R3\n\n---\n\n**2. DEADLOCK AVOIDANCE:**\n\n**Banker's Algorithm:**\n- Grant resources only if system remains in a **safe state**\n- Safe state = there exists a sequence where all processes can complete\n- Before granting request, check if resulting state is safe\n- If unsafe, make process wait\n\n**Example:**\n- Process needs 5 resources total, has 2, requests 2 more\n- Check: If we grant, can system still satisfy all processes?\n- If yes → grant; if no → deny/wait\n\n---\n\n**3. DEADLOCK DETECTION & RECOVERY:**\n\n**Detection:**\n- Periodically check for cycles in **resource allocation graph**\n- Use graph algorithms (DFS) to find circular dependencies\n- If cycle found → deadlock exists\n\n**Recovery Options:**\n1. **Abort processes:** Kill one or more processes to break cycle\n2. **Preempt resources:** Take resources from process and give to others\n3. **Rollback:** Restore process to earlier safe state\n\n**Selection Criteria:**\n- Priority of processes\n- How long process has run\n- Resources held\n- Resources needed to complete\n\n---\n\n**4. DISTRIBUTED DEADLOCK DETECTION:**\n\n**Challenge:** No global view of system\n\n**Approach:**\n- Use **probe messages** across sites\n- Each site maintains local wait-for graph\n- Detect cycles that span multiple machines\n- Coordinator collects information to build global graph\n\n**Example Algorithms:**\n- Centralized detection (one coordinator)\n- Distributed detection (probes propagate through system)\n\n**Summary:**\n- **Prevention:** Make deadlock impossible\n- **Avoidance:** Dynamically avoid unsafe states\n- **Detection:** Find and recover from deadlocks\n- **Distributed:** Handle deadlocks across machines",
+      },
+      {
+        id: "ii",
+        question:
+          "Explain the principles for designing scalable distributed systems. [10 Marks]",
+        points: [
+          "Avoid centralization",
+          "Decentralized algorithms",
+          "Partitioning",
+          "Replication",
+          "Caching",
+          "Asynchronous communication",
+        ],
+        answer:
+          "Principles for Designing Scalable Distributed Systems:\n\n**1. AVOID CENTRALIZED COMPONENTS**\n\n**Problem:** Single points become bottlenecks\n- One server handling all requests can't scale\n- Single point of failure\n- Performance degrades as load increases\n\n**Solution:**\n- Distribute responsibilities across multiple nodes\n- No single coordinator\n- Example: Use peer-to-peer instead of client-server\n\n---\n\n**2. USE DECENTRALIZED ALGORITHMS**\n\n**Principle:** Make decisions locally, not globally\n\n**Benefits:**\n- Scales better (no global coordination)\n- More fault-tolerant\n- Lower latency\n\n**Examples:**\n- Distributed hash tables (DHT)\n- Gossip protocols for information dissemination\n- Local scheduling instead of global scheduler\n\n---\n\n**3. PARTITION AND REPLICATE DATA**\n\n**Partitioning (Sharding):**\n- Split large datasets across multiple servers\n- Each server handles subset of data\n- Example: Users A-M on Server1, N-Z on Server2\n\n**Replication:**\n- Keep multiple copies of data\n- Improves availability and read performance\n- Example: 3 replicas of each data partition\n\n**Benefits:**\n+ Parallel processing\n+ Load distribution\n+ Fault tolerance\n\n---\n\n**4. USE CACHING**\n\n**Principle:** Store frequently accessed data closer to clients\n\n**Benefits:**\n- Reduces remote queries\n- Lowers network load\n- Faster response times\n\n**Levels of Caching:**\n- Client-side cache\n- Edge servers (CDN)\n- Application-level cache (Redis, Memcached)\n\n**Example:**\n- Web pages cached at edge servers\n- Database query results cached\n\n---\n\n**5. MINIMIZE GLOBAL OPERATIONS**\n\n**Problem:** Global operations don't scale\n- Global locks block everyone\n- Broadcasts overwhelm network\n- Global agreement is expensive\n\n**Solutions:**\n- Use local operations when possible\n- Partition locks (fine-grained locking)\n- Avoid broadcast; use multicast or targeted messages\n\n---\n\n**6. USE ASYNCHRONOUS COMMUNICATION**\n\n**Principle:** Don't block waiting for responses\n\n**Benefits:**\n- Higher throughput\n- Clients continue working\n- Better resource utilization\n\n**Techniques:**\n- Message queues\n- Asynchronous RPC\n- Event-driven architecture\n\n**Example:**\n- Client submits request, gets ticket, checks back later\n- Email system (send and continue)\n\n---\n\n**7. MINIMIZE DATA MOVEMENT**\n\n**Principle:** Move computation to data, not data to computation\n\n**Rationale:**\n- Network bandwidth is limited\n- Moving large datasets is expensive\n\n**Example:**\n- MapReduce: Send code to data nodes\n- Database stored procedures\n\n---\n\n**8. USE EVENTUAL CONSISTENCY (WHEN APPROPRIATE)**\n\n**Principle:** Relax consistency for better performance\n\n**Trade-off:**\n- Strong consistency → slow, doesn't scale\n- Eventual consistency → fast, scales well\n\n**Appropriate Use Cases:**\n- Social media feeds\n- DNS\n- Caching systems\n\n**Example:**\n- DNS changes propagate eventually (not immediately)\n\n---\n\n**SUMMARY:**\n\n| Principle | Action | Benefit |\n|-----------|--------|----------|\n| Avoid centralization | Distribute load | No bottleneck |\n| Decentralize | Local decisions | Better scalability |\n| Partition | Split data | Parallel processing |\n| Replicate | Multiple copies | Fault tolerance |\n| Cache | Store locally | Reduce latency |\n| Async communication | Non-blocking | Higher throughput |\n| Minimize global ops | Local operations | Better performance |\n\nThese principles work together to create systems that handle increasing load gracefully!",
+      },
     ],
-    answer:
-      "i. Deadlock Handling Techniques:\n• Prevention – Break one of the four necessary conditions (e.g., avoid hold-and-wait, impose resource ordering).\n• Avoidance – Grant resources only if state remains safe (Banker’s algorithm).\n• Detection & Recovery – Allow deadlocks, detect cycles, then abort or preempt processes.\n• Distributed detection – Use probes across sites to detect distributed deadlocks.\n\nii. Scalability Principles:\n• Avoid centralized components – Single points of failure limit scaling.\n• Use decentralized algorithms – Decisions made locally scale better.\n• Partition and replicate data – Split large workloads and store multiple copies.\n• Use caching – Reduces remote queries and network load.\n• Minimize global operations – Avoid global locks or broadcasts.\n• Use asynchronous communication – Clients don’t block; improves throughput.",
   },
   {
     id: 11,
     unit: "Security & Mutual Exclusion",
-    question:
-      "i. Explain the security challenges of distributed systems. [10 Marks]\nii. Explain how mutual exclusion is handled in distributed system. [10 Marks]",
-    points: [
-      "Authentication",
-      "Authorization",
-      "Encryption",
-      "Distributed mutual exclusion algorithms",
-      "Token-based approaches",
+    title: "Question Eleven [20 Marks]",
+    subQuestions: [
+      {
+        id: "i",
+        question:
+          "Explain the security challenges of distributed systems. [10 Marks]",
+        points: [
+          "Authentication",
+          "Authorization",
+          "Confidentiality",
+          "Integrity",
+          "Availability",
+          "Heterogeneity",
+        ],
+        answer:
+          "Security Challenges of Distributed Systems:\n\nDistributed systems face **unique security issues** because data moves across networks and there is **no single trusted authority**.\n\n---\n\n**1. AUTHENTICATION**\n\n**Challenge:** Verifying identities over insecure networks\n\n**Issues:**\n- No face-to-face verification\n- Credentials travel over network (can be intercepted)\n- Must verify both users and services\n\n**Solutions:**\n- Passwords + encryption\n- Public key cryptography\n- Kerberos authentication\n- Digital certificates\n\n**Example:** How does server know client is who they claim?\n\n---\n\n**2. AUTHORIZATION**\n\n**Challenge:** Enforcing permissions across multiple machines\n\n**Issues:**\n- Access control must be consistent across all nodes\n- Who decides permissions?\n- How to revoke access globally?\n\n**Solutions:**\n- Centralized authorization server\n- Access control lists (ACLs)\n- Role-based access control (RBAC)\n- Distributed policy enforcement\n\n**Example:** User has read access on Server A; should this apply on Server B?\n\n---\n\n**3. CONFIDENTIALITY**\n\n**Challenge:** Preventing eavesdropping\n\n**Issues:**\n- Data travels over untrusted networks\n- Multiple communication paths\n- Data stored on multiple machines\n\n**Solutions:**\n- Encrypt all network communication (TLS/SSL)\n- End-to-end encryption\n- Secure channels\n\n**Example:** Banking transaction data must stay private\n\n---\n\n**4. INTEGRITY**\n\n**Challenge:** Detecting message tampering\n\n**Issues:**\n- Messages can be modified in transit\n- Replay attacks (resend old messages)\n- Man-in-the-middle attacks\n\n**Solutions:**\n- Message authentication codes (MAC)\n- Digital signatures\n- Checksums/hashes\n- Timestamps and nonces\n\n**Example:** Attacker changes \"transfer $100\" to \"transfer $1000\"\n\n---\n\n**5. AVAILABILITY**\n\n**Challenge:** Preventing denial-of-service (DoS) attacks\n\n**Issues:**\n- Attackers can flood system with requests\n- Multiple entry points to attack\n- Distributed attacks (DDoS) harder to stop\n\n**Solutions:**\n- Rate limiting\n- Load balancers\n- Redundancy and replication\n- Intrusion detection systems\n\n**Example:** Attacker overwhelms server with fake requests\n\n---\n\n**6. HETEROGENEITY**\n\n**Challenge:** Different systems must interoperate securely\n\n**Issues:**\n- Different security mechanisms\n- Different trust models\n- Multiple administrative domains\n- Incompatible security protocols\n\n**Solutions:**\n- Standard security protocols (TLS, OAuth)\n- Gateways and proxies\n- Unified identity management\n\n**Example:** Windows clients connecting to Linux servers\n\n---\n\n**7. NO CENTRAL AUTHORITY**\n\n**Challenge:** Trust must be distributed\n\n**Issues:**\n- Who do you trust?\n- No single point of control\n- Multiple administrative domains\n\n**Solutions:**\n- Certificate authorities (CAs)\n- Web of trust\n- Distributed trust models\n\n---\n\n**SUMMARY:**\n\n| Challenge | Problem | Solution |\n|-----------|---------|----------|\n| Authentication | Verify identities remotely | Cryptography, certificates |\n| Authorization | Consistent access control | ACLs, RBAC |\n| Confidentiality | Prevent eavesdropping | Encryption |\n| Integrity | Detect tampering | Digital signatures, MACs |\n| Availability | Prevent DoS | Redundancy, rate limiting |\n| Heterogeneity | Different systems | Standard protocols |\n\n**Why Distributed Systems Are Harder to Secure:**\n- More attack surface (multiple machines, networks)\n- No single point of control\n- Data in transit is vulnerable\n- Must trust multiple parties\n- Complexity makes errors more likely",
+      },
+      {
+        id: "ii",
+        question:
+          "Explain how mutual exclusion is handled in distributed system. [10 Marks]",
+        points: [
+          "Centralized algorithm",
+          "Lamport's algorithm",
+          "Ricart-Agrawala",
+          "Token ring",
+          "Quorum-based",
+        ],
+        answer:
+          "Mutual Exclusion in Distributed Systems:\n\n**Challenge:** Without shared memory or a single clock, we need **message passing algorithms** to ensure only one process accesses the critical section at a time.\n\n---\n\n**1. CENTRALIZED ALGORITHM**\n\n**How It Works:**\n- One coordinator node controls access\n- Process sends REQUEST to coordinator\n- Coordinator grants access or queues request\n- Process sends RELEASE when done\n\n**Messages:**\n- 3 messages per entry: REQUEST, GRANT, RELEASE\n\n**Advantages:**\n✓ Simple to implement\n✓ Fair (FIFO queue)\n✓ Easy to understand\n\n**Disadvantages:**\n✗ Single point of failure (coordinator crash = deadlock)\n✗ Bottleneck (coordinator limits scalability)\n✗ Not fault-tolerant\n\n---\n\n**2. LAMPORT'S ALGORITHM**\n\n**How It Works:**\n- Fully distributed (no coordinator)\n- Uses **Lamport timestamps** to order requests\n- Process sends REQUEST to all other processes\n- Receives REPLY from everyone\n- Enters critical section when has replies from all\n- Sends RELEASE to all when done\n\n**Messages:**\n- 2(N-1) messages per entry (N = number of processes)\n- N-1 REQUESTS + N-1 RELEASES\n\n**Ordering:**\n- If two requests, earlier timestamp wins\n- Ties broken by process ID\n\n**Advantages:**\n✓ Fully distributed\n✓ No single point of failure\n✓ Fair ordering\n\n**Disadvantages:**\n✗ High message overhead\n✗ If one process fails, all block\n✗ Must communicate with everyone\n\n---\n\n**3. RICART-AGRAWALA ALGORITHM**\n\n**How It Works:**\n- Improvement over Lamport's\n- Send REQUEST to all\n- Others send REPLY immediately OR defer if they also want access\n- Enter when have replies from all\n- Deferred replies sent when releasing\n\n**Messages:**\n- (N-1) messages per entry\n- Fewer than Lamport's!\n\n**Key Insight:**\n- Combine REQUEST and RELEASE into one protocol\n- REPLY serves as acknowledgment\n\n**Advantages:**\n✓ Fewer messages than Lamport\n✓ Fully distributed\n\n**Disadvantages:**\n✗ Still requires permission from everyone\n✗ One failure blocks all\n\n---\n\n**4. TOKEN RING ALGORITHM**\n\n**How It Works:**\n- Processes arranged in logical ring\n- A token circulates around the ring\n- Only token holder can enter critical section\n- Pass token to next process when done (or don't need it)\n\n**Messages:**\n- 1 message to pass token to next\n- Continuous token circulation\n\n**Advantages:**\n✓ Simple\n✓ No starvation (everyone gets turn)\n✓ Fair\n\n**Disadvantages:**\n✗ Token can be lost\n✗ Latency (must wait for token to circulate)\n✗ If process crashes with token, system halts\n\n**Token Loss Detection:**\n- Timeout\n- Regenerate token (carefully!)\n\n---\n\n**5. QUORUM-BASED ALGORITHM**\n\n**How It Works:**\n- Don't need permission from everyone\n- Request permission from a **quorum** (subset) of processes\n- Quorums must overlap (any two quorums share at least one process)\n\n**Example:**\n- N = 5 processes\n- Quorum size = 3\n- Request permission from any 3\n\n**Advantages:**\n✓ Fewer messages than Lamport/Ricart-Agrawala\n✓ More fault-tolerant (don't need all processes)\n✓ Scalable\n\n**Disadvantages:**\n✗ More complex\n✗ Must choose quorum size carefully\n\n---\n\n**COMPARISON:**\n\n| Algorithm | Messages/Entry | Fault Tolerance | Fairness |\n|-----------|----------------|-----------------|----------|\n| Centralized | 3 | Poor (coordinator failure) | Fair |\n| Lamport | 2(N-1) | Poor (any failure blocks) | Fair |\n| Ricart-Agrawala | N-1 | Poor (any failure blocks) | Fair |\n| Token Ring | 1 to N | Poor (token loss) | Fair |\n| Quorum | Depends on quorum size | Good | Fair |\n\n---\n\n**TRADEOFFS:**\n\n**Message Overhead:**\n- Centralized: Low\n- Token: Low\n- Quorum: Medium\n- Lamport/Ricart: High\n\n**Fault Tolerance:**\n- Quorum: Best\n- Lamport/Ricart/Token/Centralized: Poor\n\n**Fairness:**\n- All: Generally fair\n\n**Complexity:**\n- Centralized/Token: Simple\n- Ricart/Lamport: Moderate\n- Quorum: Complex\n\nEach algorithm balances **message overhead, fault tolerance, and fairness** differently!",
+      },
     ],
-    answer:
-      "i. Security Challenges:\nDistributed systems face security issues because data moves across networks and there is no central authority.\nMain challenges include:\n• Authentication – Verifying identities over insecure networks.\n• Authorization – Enforcing permissions across multiple machines.\n• Confidentiality – Encrypting messages.\n• Integrity – Detecting message tampering.\n• Availability – Preventing DoS attacks.\n• Heterogeneity – Different systems and formats must interoperate securely.\n\nii. Mutual Exclusion in Distributed Systems:\nWithout shared memory or a single clock, algorithms rely on message passing.\nCommon approaches:\n• Centralized algorithm – A coordinator grants access. Simple but has a single point of failure.\n• Lamport’s Algorithm – Uses timestamps and REQUEST/REPLY/RELEASE messages; fully distributed.\n• Ricart-Agrawala – Requires permission from all nodes; fewer messages than Lamport.\n• Token Ring – A token circulates; the holder enters critical section.\n• Quorum-based – Request approval from a subset of nodes; reduces message cost.\nEach algorithm balances message overhead, fault tolerance, and fairness.",
   },
   {
     id: 12,
@@ -475,17 +518,64 @@ export const examQuestions = [
   {
     id: 13,
     unit: "Fundamentals",
-    question:
-      "a) Define a Distributed System. Give two real-world examples. [4 Marks]\nb) Differentiate between tightly coupled and loosely coupled systems. [4 Marks]\nc) Explain the concept of transparency in distributed systems and list four types. [4 Marks]\nd) What is remote procedure call (RPC)? How does it differ from local procedure calls? [4 Marks]\ne) State two advantages and two challenges of distributed systems. [4 Marks]",
-    points: [
-      "Distributed system definition",
-      "Coupling types",
-      "Transparency concept",
-      "RPC basics",
-      "Advantages and challenges",
+    title: "Question Thirteen [20 Marks]",
+    subQuestions: [
+      {
+        id: "a",
+        question:
+          "Define a Distributed System. Give two real-world examples. [4 Marks]",
+        points: ["Definition", "Characteristics", "Examples"],
+        answer:
+          "**Distributed System Definition:**\n\nA distributed system is a **collection of independent computers** that appear to users as a **single unified system** and coordinate their actions through **message passing**.\n\n**Key Characteristics:**\n1. Multiple autonomous computers\n2. Connected by a network\n3. Appear as one system to users\n4. Coordinate via messages (no shared memory)\n5. Work together to achieve a common goal\n\n---\n\n**Real-World Examples:**\n\n**1. ATM Banking Networks:**\n- ATMs across the country connected\n- Users access their account from any ATM\n- Distributed database of accounts\n- Appears as one unified banking system\n- Transactions coordinated across multiple servers\n\n**2. Google's Distributed Search Servers:**\n- Thousands of servers worldwide\n- Search queries distributed across many machines\n- Results aggregated from multiple sources\n- Users see single search interface\n- Massive scale, high availability\n\n**Other Examples:**\n- Cloud storage (Dropbox, Google Drive)\n- Content Delivery Networks (CDN)\n- Social media platforms (Facebook, Twitter)\n- E-commerce websites (Amazon)\n- Distributed databases (Cassandra, MongoDB)",
+      },
+      {
+        id: "b",
+        question:
+          "Differentiate between tightly coupled and loosely coupled systems. [4 Marks]",
+        points: [
+          "Tightly coupled characteristics",
+          "Loosely coupled characteristics",
+          "Comparison",
+        ],
+        answer:
+          "**TIGHTLY COUPLED SYSTEMS:**\n\n**Characteristics:**\n- **Shared memory** between processors\n- **Low latency** communication\n- **Same physical machine** (multiprocessor system)\n- Synchronous communication\n- High degree of coordination\n\n**Examples:**\n- Multi-core processors\n- Symmetric multiprocessing (SMP) systems\n- Parallel computers with shared memory\n\n**Advantages:**\n+ Very fast communication\n+ Easy to share data\n+ Strong consistency\n\n**Disadvantages:**\n- Limited scalability\n- Expensive hardware\n- Single point of failure\n\n---\n\n**LOOSELY COUPLED SYSTEMS:**\n\n**Characteristics:**\n- **Private memory** for each computer\n- Communicate via **message passing**\n- Connected over a **network**\n- Independent processors\n- Asynchronous communication\n\n**Examples:**\n- Distributed systems\n- Client-server systems\n- Cloud computing systems\n\n**Advantages:**\n+ High scalability\n+ Geographic distribution possible\n+ Fault tolerant (one failure doesn't stop system)\n+ Inexpensive (commodity hardware)\n\n**Disadvantages:**\n- Slower communication (network latency)\n- More complex programming\n- Weaker consistency\n\n---\n\n**COMPARISON:**\n\n| Aspect | Tightly Coupled | Loosely Coupled |\n|--------|-----------------|------------------|\n| **Memory** | Shared | Private (distributed) |\n| **Communication** | Direct memory access | Message passing |\n| **Latency** | Low (nanoseconds) | High (milliseconds) |\n| **Location** | Same machine | Different machines |\n| **Scalability** | Limited | High |\n| **Cost** | Expensive | Inexpensive |\n| **Fault Tolerance** | Low | High |\n| **Examples** | Multi-core CPU | Internet services |",
+      },
+      {
+        id: "c",
+        question:
+          "Explain the concept of transparency in distributed systems and list four types. [4 Marks]",
+        points: [
+          "Transparency concept",
+          "Access transparency",
+          "Location transparency",
+          "Migration transparency",
+          "Failure transparency",
+        ],
+        answer:
+          "**Transparency Concept:**\n\n**Transparency** means **hiding the complexities of distribution** so the system appears to users as a **single, centralized system**.\n\n**Goal:** Users and applications should not need to know:\n- Where resources are located\n- How many copies exist\n- Whether resources are local or remote\n- When failures occur or resources move\n\n---\n\n**Four Types of Transparency:**\n\n**1. ACCESS TRANSPARENCY:**\n\n**Definition:** Hide differences in data representation and how resources are accessed\n\n**Benefit:**\n- Same operations work locally and remotely\n- No special syntax for remote access\n\n**Example:**\n- File access: `open(\"/shared/file.txt\")` works whether file is local or remote\n- User doesn't need different commands\n\n---\n\n**2. LOCATION TRANSPARENCY:**\n\n**Definition:** Hide the physical location of resources\n\n**Benefit:**\n- Access resources by name, not location\n- Don't need to know which server hosts resource\n\n**Example:**\n- URL: `http://example.com/page.html`\n- User doesn't know which physical server serves the page\n- Could be Server A or Server B\n\n---\n\n**3. MIGRATION TRANSPARENCY:**\n\n**Definition:** Hide that resources can move between locations\n\n**Benefit:**\n- Resources can be relocated without affecting users\n- System can optimize placement\n\n**Example:**\n- File moved from Server1 to Server2\n- Path `/shared/docs/report.pdf` still works\n- Users unaware of the move\n\n---\n\n**4. FAILURE TRANSPARENCY:**\n\n**Definition:** Hide failures and recovery of resources\n\n**Benefit:**\n- System continues working despite component failures\n- Automatic recovery\n\n**Example:**\n- Server crashes, backup takes over\n- User's request completes (maybe with slight delay)\n- User doesn't see error message\n\n---\n\n**Other Types (for reference):**\n- **Replication Transparency:** Hide that multiple copies exist\n- **Concurrency Transparency:** Hide that multiple users access same resource\n- **Performance Transparency:** Hide performance variations\n- **Scalability Transparency:** Hide system growth\n\n**Summary:** Transparency makes distributed systems easier to use by hiding distributed nature from users!",
+      },
+      {
+        id: "d",
+        question:
+          "What is remote procedure call (RPC)? How does it differ from local procedure calls? [4 Marks]",
+        points: ["RPC definition", "Differences from local calls"],
+        answer:
+          "**Remote Procedure Call (RPC):**\n\n**Definition:**\nRPC allows a program to **invoke a function on a remote machine** as if it were a **local call**.\n\n**Goal:** Make distributed programming look like normal programming\n\n**How It Works:**\n1. Client calls function (looks normal)\n2. Client stub marshals parameters\n3. Message sent over network\n4. Server stub receives and unmarshals\n5. Server executes procedure\n6. Result sent back\n7. Client receives result\n\n---\n\n**Key Differences from Local Procedure Calls:**\n\n**1. NETWORK COMMUNICATION**\n\n**Local:**\n- Direct function jump within same process\n- No network involved\n\n**RPC:**\n- Requires network communication\n- Data serialization (marshaling)\n- Message transmission\n\n---\n\n**2. LATENCY**\n\n**Local:**\n- Very fast (nanoseconds)\n- Direct memory access\n\n**RPC:**\n- Much slower (milliseconds)\n- 100-1000x slower than local calls\n- Network delay dominates\n\n---\n\n**3. FAILURE MODES**\n\n**Local:**\n- Only fails if process crashes\n- Deterministic behavior\n\n**RPC:**\n- Network can fail\n- Server can crash\n- Timeout issues\n- Message loss\n- Many more failure scenarios\n\n---\n\n**4. PARAMETER PASSING**\n\n**Local:**\n- Can pass by value or reference\n- Pointers work (shared address space)\n\n**RPC:**\n- Primarily call-by-value\n- Pointers don't work (no shared memory)\n- Must serialize complex data structures\n\n---\n\n**5. DATA REPRESENTATION**\n\n**Local:**\n- No conversion needed\n- Same machine format\n\n**RPC:**\n- Must handle different architectures\n- Byte order (endianness)\n- Data type sizes may differ\n- Marshaling/unmarshaling required\n\n---\n\n**COMPARISON TABLE:**\n\n| Aspect | Local Call | RPC |\n|--------|-----------|-----|\n| **Speed** | Nanoseconds | Milliseconds |\n| **Failure** | Process crash only | Network, server, timeout |\n| **Parameters** | Value or reference | Mainly value |\n| **Address Space** | Shared | Separate machines |\n| **Complexity** | Simple | Complex (marshaling, stubs) |\n| **Reliability** | Deterministic | Non-deterministic |\n\n**Summary:** RPC **tries to make remote calls look local**, but fundamental differences mean **perfect transparency is impossible**.",
+      },
+      {
+        id: "e",
+        question:
+          "State two advantages and two challenges of distributed systems. [4 Marks]",
+        points: [
+          "Resource sharing",
+          "Scalability",
+          "Security challenges",
+          "Complexity",
+        ],
+        answer:
+          "**TWO ADVANTAGES:**\n\n**1. RESOURCE SHARING:**\n\n**Benefit:**\n- Multiple users can share expensive resources\n- Better utilization\n- Cost-effective\n\n**Examples:**\n- Shared printers in office network\n- Shared databases across organization\n- Cloud computing resources\n- Distributed file systems\n\n**Impact:**\n- Don't need to buy resources for each user\n- Access resources from anywhere\n- Collaboration easier\n\n---\n\n**2. SCALABILITY:**\n\n**Benefit:**\n- Easy to add more machines to increase capacity\n- Handle growing workloads\n- Incremental growth\n\n**Examples:**\n- Add more web servers as traffic increases\n- Cloud services scale automatically\n- Distribute load across many nodes\n\n**Impact:**\n- System grows with demand\n- No need to replace entire system\n- Cost-effective scaling\n\n---\n\n**TWO CHALLENGES:**\n\n**1. SECURITY ISSUES:**\n\n**Problem:**\n- Data travels over untrusted networks\n- Multiple entry points for attacks\n- No central security control\n\n**Issues:**\n- Eavesdropping on network traffic\n- Unauthorized access\n- Data tampering\n- Denial-of-service attacks\n\n**Example:**\n- Sensitive data intercepted on network\n- Hackers attack vulnerable servers\n\n**Why Harder:**\n- Larger attack surface\n- More components = more vulnerabilities\n- Must secure communication and storage\n\n---\n\n**2. INCREASED SYSTEM COMPLEXITY:**\n\n**Problem:**\n- More components to manage\n- Harder to design, implement, test\n- More failure modes\n\n**Issues:**\n- Network failures\n- Partial system failures\n- Synchronization challenges\n- Debugging is difficult\n\n**Example:**\n- Bug appears only under specific network conditions\n- Hard to reproduce failures\n- Coordinating updates across machines\n\n**Why Harder:**\n- No single point of control\n- Asynchronous operations\n- Concurrency issues\n- Distributed state management\n\n---\n\n**SUMMARY:**\n\n| Category | Description |\n|----------|-------------|\n| **Advantages** | Resource sharing, Scalability |\n| **Challenges** | Security, Complexity |\n\n**Trade-off:** Distributed systems offer powerful benefits but require careful design to address security and complexity challenges!",
+      },
     ],
-    answer:
-      "a) A distributed system is a collection of independent computers that appear to users as a single unified system and coordinate their actions through message passing. Examples include ATM banking networks and Google’s distributed search servers.\n\nb) Tightly coupled systems use shared memory, low latency communication, and operate in the same physical machine. Loosely coupled systems consist of independent computers with private memory communicating via message passing over a network, offering higher scalability and distribution.\n\nc) Transparency means hiding the complexities of distribution so the system appears centralized. Types include: access transparency, location transparency, migration transparency, and failure transparency.\n\nd) Remote Procedure Call (RPC) allows a program to invoke a function on a remote machine as if it were a local call. Unlike local calls, RPC requires network communication, data serialization, and has higher latency and additional failure modes.\n\ne) Advantages: resource sharing and scalability. Challenges: security issues and increased system complexity.",
   },
   {
     id: 14,

@@ -178,23 +178,51 @@ export default function ExamRevision({ onBack, examState, updateExamState, setEx
 
         {/* Question Card */}
         <div className="bg-white rounded-xl shadow-lg p-8 mb-6">
-          <div className="flex items-start gap-4 mb-6">
-            <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold flex-shrink-0">
-              Q{questionIndex + 1}
-            </div>
-            <div className="flex-1">
-              <div className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-3">
-                {question.unit}
+          <div className="flex items-start justify-between gap-4 mb-6">
+            <div className="flex items-start gap-4 flex-1">
+              <div className="flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 text-white font-bold flex-shrink-0">
+                Q{questionIndex + 1}
               </div>
-              {hasSubQuestions ? (
-                <div className="text-gray-900 text-xl font-bold mb-6">
-                  {question.title}
+              <div className="flex-1">
+                <div className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-semibold mb-3">
+                  {question.unit}
                 </div>
-              ) : (
-                <div className="text-gray-900 text-lg leading-relaxed whitespace-pre-line">
-                  {question.question}
-                </div>
+                {hasSubQuestions ? (
+                  <div className="text-gray-900 text-xl font-bold mb-6">
+                    {question.title}
+                  </div>
+                ) : (
+                  <div className="text-gray-900 text-lg leading-relaxed whitespace-pre-line">
+                    {question.question}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center gap-2 flex-shrink-0">
+              {speechSupported && (
+                <button
+                  onClick={speakQuestion}
+                  disabled={isSpeaking}
+                  className="flex items-center gap-2 px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  title="Listen to question"
+                >
+                  <Volume2 className="w-4 h-4" />
+                  Listen
+                </button>
               )}
+              <button
+                onClick={() => setShowAnswer(!answerShown)}
+                className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold transition-all ${
+                  answerShown
+                    ? 'bg-green-100 hover:bg-green-200 text-green-700'
+                    : 'bg-blue-100 hover:bg-blue-200 text-blue-700'
+                }`}
+              >
+                <Award className="w-4 h-4" />
+                {answerShown ? 'Hide Answer' : 'Show Answer'}
+              </button>
             </div>
           </div>
 
@@ -305,18 +333,6 @@ export default function ExamRevision({ onBack, examState, updateExamState, setEx
               )}
             </>
           )}
-
-          {/* Show Answer Button */}
-          <button
-            onClick={() => setShowAnswer(!answerShown)}
-            className={`w-full py-4 rounded-lg font-semibold transition-all ${
-              answerShown
-                ? 'bg-gradient-to-r from-green-500 to-teal-500 text-white'
-                : 'bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:shadow-lg'
-            }`}
-          >
-            {answerShown ? '✓ Answer Shown' : '👁️ Show Model Answer'}
-          </button>
 
           {/* Answer (old format - only if no sub-questions) */}
           {!hasSubQuestions && answerShown && (
